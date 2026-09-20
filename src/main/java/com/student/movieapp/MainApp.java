@@ -1,0 +1,47 @@
+package com.student.movieapp;
+
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
+import java.io.IOException;
+
+/**
+ * Main application entry point for the Movie Watchlist Manager.
+ * Loads the primary stage, main view FXML, and application stylesheet.
+ */
+public class MainApp extends Application {
+
+    @Override
+    public void start(Stage primaryStage) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/MainView.fxml"));
+            Parent root = loader.load();
+
+            Scene scene = new Scene(root, 950, 650);
+            
+            // Apply stylesheet
+            String cssPath = getClass().getResource("/styles/application.css").toExternalForm();
+            scene.getStylesheets().add(cssPath);
+
+            primaryStage.setTitle("Movie Watchlist Manager");
+            primaryStage.setMinWidth(850);
+            primaryStage.setMinHeight(550);
+            primaryStage.setScene(scene);
+            primaryStage.show();
+
+        } catch (IOException e) {
+            System.err.println("Failed to initialize application UI: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Standard main method to launch JavaFX application.
+     */
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
