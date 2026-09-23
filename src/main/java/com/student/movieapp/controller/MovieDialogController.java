@@ -221,6 +221,11 @@ public class MovieDialogController {
             alert.setTitle("Invalid Input");
             alert.setHeaderText("Please correct the following errors:");
             alert.setContentText(errorMessage.toString());
+            
+            DialogPane pane = alert.getDialogPane();
+            pane.getStylesheets().add(getClass().getResource("/styles/application.css").toExternalForm());
+            pane.getStyleClass().add("cinevault-dialog");
+            
             alert.showAndWait();
             return false;
         }

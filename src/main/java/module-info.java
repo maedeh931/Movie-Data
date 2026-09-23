@@ -1,6 +1,7 @@
 module com.student.movieapp {
     requires javafx.controls;
     requires javafx.fxml;
+    requires java.sql;
 
     opens com.student.movieapp to javafx.graphics;
     opens com.student.movieapp.controller to javafx.fxml;
@@ -9,4 +10,5 @@ module com.student.movieapp {
     exports com.student.movieapp;
     exports com.student.movieapp.model;
     exports com.student.movieapp.controller;
+    exports com.student.movieapp.dao;
 }

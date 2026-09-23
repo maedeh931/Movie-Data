@@ -5,84 +5,178 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="550.0" minWidth="850.0" prefHeight="650.0" prefWidth="950.0" stylesheets="@../styles/application.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.student.movieapp.controller.MainController">
-   <top>
-      <VBox BorderPane.alignment="CENTER">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="650.0" minWidth="1000.0" prefHeight="780.0" prefWidth="1180.0" stylesheets="@../styles/application.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.student.movieapp.controller.MainController">
+   <!-- Left Sidebar Panel -->
+   <left>
+      <VBox prefWidth="230.0" spacing="6.0" styleClass="sidebar-panel" BorderPane.alignment="CENTER">
          <children>
-            <!-- Header Title Bar -->
-            <VBox styleClass="header-box">
+            <!-- App Brand & Title -->
+            <VBox spacing="2.0">
                <children>
-                  <Label styleClass="header-title" text="MOVIE WATCHLIST MANAGER" />
-                  <Label styleClass="header-subtitle" text="Organize, track, and manage your favorite movies" />
+                  <HBox alignment="CENTER_LEFT" spacing="6.0">
+                     <children>
+                        <Label styleClass="brand-accent" text="✦" />
+                        <Label styleClass="brand-title" text="CINEVAULT" />
+                     </children>
+                  </HBox>
+                  <Label styleClass="brand-subtitle" text="Movie Tracker &amp; Vault" />
+               </children>
+               <VBox.margin>
+                  <Insets bottom="10.0" left="4.0" />
+               </VBox.margin>
+            </VBox>
+
+            <!-- Navigation Section -->
+            <Label styleClass="sidebar-section-label" text="COLLECTIONS" />
+            
+            <VBox fx:id="sidebarCollectionsBox" spacing="4.0">
+               <children>
+                  <Button fx:id="navAllMovies" alignment="BASELINE_LEFT" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleNavAllMovies" styleClass="sidebar-nav-item, sidebar-nav-item-active" text="◀   All Movies" />
+                  <Button fx:id="navWantToWatch" alignment="BASELINE_LEFT" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleNavWantToWatch" styleClass="sidebar-nav-item" text="◀   Want to Watch" />
+                  <Button fx:id="navWatched" alignment="BASELINE_LEFT" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleNavWatched" styleClass="sidebar-nav-item" text="◀   Watched" />
+                  <Button fx:id="navFavorites" alignment="BASELINE_LEFT" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleNavFavorites" styleClass="sidebar-nav-item" text="◀   Favorites" />
+                  <Button fx:id="navQuickPicks" alignment="BASELINE_LEFT" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleNavQuickPicks" styleClass="sidebar-nav-item" text="◀   Quick Picks" />
+                  <Button fx:id="navDateNight" alignment="BASELINE_LEFT" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleNavDateNight" styleClass="sidebar-nav-item" text="◀   Date Night" />
+                  <Button fx:id="navMovieNight" alignment="BASELINE_LEFT" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleNavMovieNight" styleClass="sidebar-nav-item" text="◀   Movie Night" />
+                  <Button fx:id="navAwardWinners" alignment="BASELINE_LEFT" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleNavAwardWinners" styleClass="sidebar-nav-item" text="◀   Award Winners" />
                </children>
             </VBox>
 
-            <!-- Filter Controls Bar -->
-            <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="filter-panel">
+            <!-- Spacer pushes New Collection button to bottom -->
+            <Pane VBox.vgrow="ALWAYS" />
+
+            <!-- New Collection Button -->
+            <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleNewCollection" styleClass="btn-outline-collection" text="+ New Collection" />
+         </children>
+      </VBox>
+   </left>
+
+   <!-- Center Main Dashboard Area -->
+   <center>
+      <VBox spacing="14.0" styleClass="main-content" BorderPane.alignment="CENTER">
+         <children>
+            <!-- Header Row: Category Title, Stats, View Toggles & Actions -->
+            <HBox alignment="CENTER_LEFT" spacing="14.0">
                <children>
-                  <Label styleClass="label-filter" text="Genre:" />
-                  <ComboBox fx:id="genreFilterBox" prefWidth="140.0" promptText="All Genres" />
-
-                  <Label styleClass="label-filter" text="Status:">
+                  <Label fx:id="categoryTitleLabel" styleClass="header-category-title" text="All Movies" />
+                  
+                  <!-- Stat Pill Badges -->
+                  <HBox alignment="CENTER_LEFT" spacing="8.0">
+                     <children>
+                        <Label fx:id="totalMoviesStatLabel" styleClass="stat-pill" text="0 movies" />
+                        <Label fx:id="avgRatingStatLabel" styleClass="stat-pill" text="★ 0.0 avg rating" />
+                        <Label fx:id="watchTimeStatLabel" styleClass="stat-pill" text="⏱ 0 hours" />
+                     </children>
                      <HBox.margin>
-                        <Insets left="8.0" />
+                        <Insets left="4.0" />
                      </HBox.margin>
-                  </Label>
-                  <ComboBox fx:id="statusFilterBox" prefWidth="150.0" promptText="All Statuses" />
+                  </HBox>
 
-                  <Label styleClass="label-filter" text="Date Added:">
+                  <Pane HBox.hgrow="ALWAYS" />
+
+                  <!-- View Switcher (Grid vs Table) -->
+                  <HBox alignment="CENTER">
+                     <children>
+                        <Button fx:id="gridViewToggleBtn" mnemonicParsing="false" onAction="#handleShowGridView" styleClass="view-toggle-btn, view-toggle-btn-left, view-toggle-btn-active" text="⊞ Grid" />
+                        <Button fx:id="tableViewToggleBtn" mnemonicParsing="false" onAction="#handleShowTableView" styleClass="view-toggle-btn, view-toggle-btn-right" text="☰ Table" />
+                     </children>
                      <HBox.margin>
-                        <Insets left="8.0" />
+                        <Insets right="8.0" />
                      </HBox.margin>
-                  </Label>
-                  <DatePicker fx:id="dateFilterPicker" prefWidth="140.0" promptText="Pick a date" />
+                  </HBox>
 
-                  <Button mnemonicParsing="false" onAction="#handleFilter" styleClass="btn-primary" text="Filter" />
-                  <Button mnemonicParsing="false" onAction="#handleRefresh" styleClass="btn-secondary" text="Clear Filters" />
+                  <!-- Sort Selector -->
+                  <ComboBox fx:id="sortComboBox" prefWidth="175.0" promptText="Sort by..." styleClass="dark-combo-box" />
+
+                  <!-- Action Buttons -->
+                  <Button mnemonicParsing="false" onAction="#handleAddMovie" styleClass="btn-primary-action" text="+ Add Movie" />
+                  <Button mnemonicParsing="false" onAction="#handleEditMovie" styleClass="btn-secondary-action" text="Edit" />
+                  <Button mnemonicParsing="false" onAction="#handleDeleteMovie" styleClass="btn-danger-action" text="Delete" />
+               </children>
+            </HBox>
+
+            <!-- Command & Search Bar -->
+            <VBox spacing="4.0">
+               <children>
+                  <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="command-bar-box">
+                     <children>
+                        <Label styleClass="command-icon" text="🔍" />
+                        <TextField fx:id="searchTextField" promptText="type to search movies (Ctrl+K)..." styleClass="command-text-field" HBox.hgrow="ALWAYS" />
+                        
+                        <!-- Inline Quick Filters -->
+                        <ComboBox fx:id="genreFilterBox" prefWidth="130.0" promptText="All Genres" styleClass="dark-combo-box" />
+                        <ComboBox fx:id="statusFilterBox" prefWidth="135.0" promptText="All Statuses" styleClass="dark-combo-box" />
+                        <DatePicker fx:id="dateFilterPicker" prefWidth="125.0" promptText="Date Added" styleClass="dark-combo-box" />
+
+                        <Button mnemonicParsing="false" onAction="#handleFilter" styleClass="btn-secondary-action" text="Filter" />
+                        <Button mnemonicParsing="false" onAction="#handleRefresh" styleClass="btn-secondary-action" text="Clear" />
+                     </children>
+                  </HBox>
+                  <Label styleClass="command-hint-text" text="Try: 'inception', 'add movie', 'delete', 'filter sci-fi'" />
+               </children>
+            </VBox>
+
+            <!-- Center Content Stack (Grid View & Table View) -->
+            <StackPane fx:id="contentStackPane" VBox.vgrow="ALWAYS">
+               <children>
+                  <!-- View 1: Card Grid View -->
+                  <ScrollPane fx:id="gridScrollPane" fitToWidth="true" hbarPolicy="NEVER" styleClass="dark-scroll-pane" vbarPolicy="AS_NEEDED">
+                     <content>
+                        <FlowPane fx:id="movieCardsFlowPane" hgap="16.0" prefWrapLength="880.0" vgap="16.0">
+                           <padding>
+                              <Insets bottom="8.0" left="2.0" right="2.0" top="4.0" />
+                           </padding>
+                        </FlowPane>
+                     </content>
+                  </ScrollPane>
+
+                  <!-- View 2: Power User Table View -->
+                  <TableView fx:id="movieTableView" prefHeight="400.0" prefWidth="900.0" visible="false">
+                     <columns>
+                        <TableColumn fx:id="titleCol" prefWidth="260.0" text="Title" />
+                        <TableColumn fx:id="genreCol" prefWidth="120.0" text="Genre" />
+                        <TableColumn fx:id="yearCol" prefWidth="100.0" text="Release Year" />
+                        <TableColumn fx:id="ratingCol" prefWidth="95.0" text="Rating" />
+                        <TableColumn fx:id="statusCol" prefWidth="140.0" text="Status" />
+                        <TableColumn fx:id="dateCol" prefWidth="130.0" text="Date Added" />
+                     </columns>
+                     <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                     </columnResizePolicy>
+                  </TableView>
+               </children>
+            </StackPane>
+
+            <!-- Bottom: Keyboard Shortcuts Card -->
+            <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="keyboard-card">
+               <children>
+                  <Label styleClass="keyboard-title" text="KEYBOARD SHORTCUTS" />
+                  <Label styleClass="kbd-badge" text="Ctrl+K" />
+                  <Label styleClass="kbd-desc" text="Command / Search" />
+                  <Label styleClass="kbd-badge" text="Ctrl+N" />
+                  <Label styleClass="kbd-desc" text="New Movie" />
+                  <Label styleClass="kbd-badge" text="Enter" />
+                  <Label styleClass="kbd-desc" text="Edit Movie" />
+                  <Label styleClass="kbd-badge" text="Del" />
+                  <Label styleClass="kbd-desc" text="Delete" />
+                  <Label styleClass="kbd-badge" text="Ctrl+G / Ctrl+T" />
+                  <Label styleClass="kbd-desc" text="Grid / Table" />
+                  <Label styleClass="kbd-badge" text="Esc" />
+                  <Label styleClass="kbd-desc" text="Clear" />
                </children>
             </HBox>
          </children>
       </VBox>
-   </top>
-
-   <!-- Center TableView -->
-   <center>
-      <TableView fx:id="movieTableView" prefHeight="400.0" prefWidth="950.0" BorderPane.alignment="CENTER">
-        <columns>
-          <TableColumn fx:id="titleCol" prefWidth="250.0" text="Title" />
-          <TableColumn fx:id="genreCol" prefWidth="130.0" text="Genre" />
-          <TableColumn fx:id="yearCol" prefWidth="100.0" text="Release Year" />
-          <TableColumn fx:id="ratingCol" prefWidth="90.0" text="Rating" />
-          <TableColumn fx:id="statusCol" prefWidth="150.0" text="Status" />
-          <TableColumn fx:id="dateCol" prefWidth="140.0" text="Date Added" />
-        </columns>
-         <columnResizePolicy>
-            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-         </columnResizePolicy>
-      </TableView>
    </center>
-
-   <!-- Bottom Action Controls & Status -->
-   <bottom>
-      <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="action-panel" BorderPane.alignment="CENTER">
-         <children>
-            <Button mnemonicParsing="false" onAction="#handleAddMovie" styleClass="btn-primary" text="+ Add Movie" />
-            <Button mnemonicParsing="false" onAction="#handleEditMovie" styleClass="btn-secondary" text="Edit" />
-            <Button mnemonicParsing="false" onAction="#handleDeleteMovie" styleClass="btn-danger" text="Delete" />
-            <Button mnemonicParsing="false" onAction="#handleRefresh" styleClass="btn-secondary" text="Refresh" />
-
-            <!-- Spacer pushes Total Movies counter to the right -->
-            <Pane HBox.hgrow="ALWAYS" />
-
-            <Label fx:id="totalMoviesLabel" styleClass="total-label" text="Total Movies: 0" />
-         </children>
-      </HBox>
-   </bottom>
 </BorderPane>

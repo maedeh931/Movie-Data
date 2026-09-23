@@ -20,15 +20,15 @@ public class MainApp extends Application {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/MainView.fxml"));
             Parent root = loader.load();
 
-            Scene scene = new Scene(root, 950, 650);
+            Scene scene = new Scene(root, 1180, 780);
             
             // Apply stylesheet
             String cssPath = getClass().getResource("/styles/application.css").toExternalForm();
             scene.getStylesheets().add(cssPath);
 
-            primaryStage.setTitle("Movie Watchlist Manager");
-            primaryStage.setMinWidth(850);
-            primaryStage.setMinHeight(550);
+            primaryStage.setTitle("CineVault — Movie Tracker & Vault");
+            primaryStage.setMinWidth(1000);
+            primaryStage.setMinHeight(650);
             primaryStage.setScene(scene);
             primaryStage.show();
 

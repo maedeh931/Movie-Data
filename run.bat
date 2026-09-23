@@ -6,7 +6,7 @@ REM ======================================================================
 set "JAVA_HOME=C:\Users\Madiha_Rahman\.jdks\openjdk-26.0.2"
 set "MVN_CMD=C:\Program Files\JetBrains\IntelliJ IDEA 2026.2.1\plugins\maven-plugin\lib\maven3\bin\mvn.cmd"
 
-echo Starting Movie Watchlist Manager...
+echo Starting CineVault — Modern Movie Tracker...
 "%MVN_CMD%" javafx:run
 
 if %ERRORLEVEL% NEQ 0 (
