@@ -14,12 +14,13 @@ public class Movie {
     private final DoubleProperty rating;
     private final StringProperty status;
     private final StringProperty dateAdded;
+    private final StringProperty posterUrl;
 
     /**
      * Default constructor for empty initialization.
      */
     public Movie() {
-        this(0, "", "", 0, 0.0, "Want to Watch", "");
+        this(0, "", "", 0, 0.0, "Want to Watch", "", "");
     }
 
     /**
@@ -32,8 +33,9 @@ public class Movie {
      * @param rating      IMDb / personal rating (e.g. 8.7)
      * @param status      Watch status ("Want to Watch", "Watching", "Watched")
      * @param dateAdded   Date string when the movie was added
+     * @param posterUrl   URL for the movie poster image
      */
-    public Movie(int id, String title, String genre, int releaseYear, double rating, String status, String dateAdded) {
+    public Movie(int id, String title, String genre, int releaseYear, double rating, String status, String dateAdded, String posterUrl) {
         this.id = new SimpleIntegerProperty(id);
         this.title = new SimpleStringProperty(title);
         this.genre = new SimpleStringProperty(genre);
@@ -41,6 +43,7 @@ public class Movie {
         this.rating = new SimpleDoubleProperty(rating);
         this.status = new SimpleStringProperty(status);
         this.dateAdded = new SimpleStringProperty(dateAdded);
+        this.posterUrl = new SimpleStringProperty(posterUrl);
     }
 
     // --- ID Property ---
@@ -132,6 +135,19 @@ public class Movie {
 
     public StringProperty dateAddedProperty() {
         return dateAdded;
+    }
+
+    // --- Poster URL Property ---
+    public String getPosterUrl() {
+        return posterUrl.get();
+    }
+
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl.set(posterUrl);
+    }
+
+    public StringProperty posterUrlProperty() {
+        return posterUrl;
     }
 
     @Override

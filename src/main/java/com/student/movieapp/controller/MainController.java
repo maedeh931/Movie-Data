@@ -254,19 +254,34 @@ public class MainController {
         VBox card = new VBox();
         card.getStyleClass().add("movie-card");
 
-        // Deterministic gradient selection
-        int gradientIndex = Math.abs(movie.getTitle().hashCode()) % POSTER_GRADIENTS.length;
-        String gradient = POSTER_GRADIENTS[gradientIndex];
-
-        // 1. Tall Vibrant Gradient Poster Box
+        // 1. Tall Vibrant Gradient Poster Box / Real Image Poster
         StackPane posterBox = new StackPane();
         posterBox.getStyleClass().add("card-poster");
-        posterBox.setStyle("-fx-background-color: " + gradient + ";");
 
-        // Initials in center (e.g. IN, DU, PA, SR, TB, OP)
-        Label initialsLabel = new Label(getMovieInitials(movie.getTitle()));
-        initialsLabel.getStyleClass().add("card-initials");
-        posterBox.getChildren().add(initialsLabel);
+        if (movie.getPosterUrl() != null && !movie.getPosterUrl().trim().isEmpty()) {
+            javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
+            try {
+                javafx.scene.image.Image image = new javafx.scene.image.Image(movie.getPosterUrl(), 175, 260, true, true, true);
+                imageView.setImage(image);
+                imageView.setFitWidth(175);
+                imageView.setFitHeight(260);
+                posterBox.getChildren().add(imageView);
+            } catch (Exception e) {
+                // Fallback to initials if URL is invalid or fails to load
+                int gradientIndex = Math.abs(movie.getTitle().hashCode()) % POSTER_GRADIENTS.length;
+                posterBox.setStyle("-fx-background-color: " + POSTER_GRADIENTS[gradientIndex] + ";");
+                Label initialsLabel = new Label(getMovieInitials(movie.getTitle()));
+                initialsLabel.getStyleClass().add("card-initials");
+                posterBox.getChildren().add(initialsLabel);
+            }
+        } else {
+            // Fallback to initials
+            int gradientIndex = Math.abs(movie.getTitle().hashCode()) % POSTER_GRADIENTS.length;
+            posterBox.setStyle("-fx-background-color: " + POSTER_GRADIENTS[gradientIndex] + ";");
+            Label initialsLabel = new Label(getMovieInitials(movie.getTitle()));
+            initialsLabel.getStyleClass().add("card-initials");
+            posterBox.getChildren().add(initialsLabel);
+        }
 
         // 2. Dark Footer
         VBox footerBox = new VBox();

@@ -38,6 +38,9 @@ public class MovieDialogController {
     private ComboBox<String> statusComboBox;
 
     @FXML
+    private TextField posterUrlField;
+
+    @FXML
     private Button saveButton;
 
     @FXML
@@ -90,6 +93,7 @@ public class MovieDialogController {
             yearField.setText(String.valueOf(movie.getReleaseYear()));
             ratingField.setText(String.valueOf(movie.getRating()));
             statusComboBox.setValue(movie.getStatus());
+            posterUrlField.setText(movie.getPosterUrl() == null ? "" : movie.getPosterUrl());
 
             if (movie.getDateAdded() != null && !movie.getDateAdded().isEmpty()) {
                 try {
@@ -131,6 +135,7 @@ public class MovieDialogController {
             movie.setReleaseYear(Integer.parseInt(yearField.getText().trim()));
             movie.setRating(Double.parseDouble(ratingField.getText().trim()));
             movie.setStatus(statusComboBox.getValue());
+            movie.setPosterUrl(posterUrlField.getText() != null ? posterUrlField.getText().trim() : "");
 
             if (datePicker.getValue() != null) {
                 movie.setDateAdded(datePicker.getValue().format(dateFormatter));

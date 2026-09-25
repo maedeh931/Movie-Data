@@ -1,10 +1,16 @@
 package com.student.movieapp.dao;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.student.movieapp.model.Movie;
 
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.lang.reflect.Type;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Data Access Object (DAO) for managing SQLite database CRUD operations for CineVault.
@@ -26,7 +32,8 @@ public class DatabaseManager {
                 release_year INTEGER NOT NULL,
                 rating REAL NOT NULL,
                 status TEXT NOT NULL,
-                date_added TEXT NOT NULL
+                date_added TEXT NOT NULL,
+                poster_url TEXT
             );
         """;
 
@@ -60,47 +67,31 @@ public class DatabaseManager {
     }
 
     /**
-     * Pre-populates default demo records on first launch.
+     * Pre-populates default demo records from JSON on first launch.
      */
-    private static void seedInitialData(Connection conn) throws SQLException {
-        String insertSQL = "INSERT INTO movies (title, genre, release_year, rating, status, date_added) VALUES (?, ?, ?, ?, ?, ?);";
-        try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
-            Object[][] seed = {
-                {"Interstellar", "Sci-Fi", 2014, 8.7, "Watched", "04/09/26"},
-                {"Dune", "Sci-Fi", 2021, 8.0, "Want to Watch", "02/09/26"},
-                {"Dune: Part Two", "Sci-Fi", 2024, 8.6, "Watched", "05/09/26"},
-                {"Parasite", "Drama", 2019, 8.5, "Watched", "01/09/26"},
-                {"The Shawshank Redemption", "Drama", 1994, 9.3, "Watched", "25/08/26"},
-                {"The Batman", "Action", 2022, 7.8, "Watched", "27/08/26"},
-                {"Oppenheimer", "Drama", 2023, 8.9, "Watched", "06/09/26"},
-                {"Inception", "Sci-Fi", 2010, 8.8, "Watched", "03/09/26"},
-                {"The Dark Knight", "Action", 2008, 9.0, "Watched", "28/08/26"},
-                {"Blade Runner 2049", "Sci-Fi", 2017, 8.0, "Want to Watch", "29/08/26"},
-                {"Whiplash", "Drama", 2014, 8.5, "Watched", "30/08/26"},
-                {"Spider-Man: Across the Spider-Verse", "Animation", 2023, 8.7, "Watched", "31/08/26"},
-                {"Pulp Fiction", "Crime", 1994, 8.9, "Watched", "20/08/26"},
-                {"Everything Everywhere All at Once", "Sci-Fi", 2022, 7.8, "Want to Watch", "21/08/26"},
-                {"Spirited Away", "Animation", 2001, 8.6, "Watched", "22/08/26"},
-                {"La La Land", "Romance", 2016, 8.0, "Want to Watch", "23/08/26"},
-                {"Fight Club", "Drama", 1999, 8.8, "Watched", "18/08/26"},
-                {"The Matrix", "Sci-Fi", 1999, 8.7, "Watched", "19/08/26"},
-                {"Gladiator", "Action", 2000, 8.5, "Watched", "17/08/26"},
-                {"The Grand Budapest Hotel", "Comedy", 2014, 8.1, "Want to Watch", "16/08/26"},
-                {"Alien", "Horror", 1979, 8.5, "Watched", "15/08/26"},
-                {"The Prestige", "Drama", 2006, 8.5, "Watched", "14/08/26"},
-                {"Coco", "Animation", 2017, 8.4, "Watched", "13/08/26"},
-                {"Arrival", "Sci-Fi", 2016, 7.9, "Watched", "12/08/26"}
-            };
-
-            for (Object[] row : seed) {
-                pstmt.setString(1, (String) row[0]);
-                pstmt.setString(2, (String) row[1]);
-                pstmt.setInt(3, (Integer) row[2]);
-                pstmt.setDouble(4, (Double) row[3]);
-                pstmt.setString(5, (String) row[4]);
-                pstmt.setString(6, (String) row[5]);
+    private static void seedInitialData(Connection conn) {
+        String insertSQL = "INSERT INTO movies (title, genre, release_year, rating, status, date_added, poster_url) VALUES (?, ?, ?, ?, ?, ?, ?);";
+        
+        try (Reader reader = new InputStreamReader(Objects.requireNonNull(DatabaseManager.class.getResourceAsStream("/data/movies.json")));
+             PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+             
+            Gson gson = new Gson();
+            Type movieListType = new TypeToken<ArrayList<Movie>>(){}.getType();
+            List<Movie> movies = gson.fromJson(reader, movieListType);
+            
+            for (Movie movie : movies) {
+                pstmt.setString(1, movie.getTitle());
+                pstmt.setString(2, movie.getGenre());
+                pstmt.setInt(3, movie.getReleaseYear());
+                pstmt.setDouble(4, movie.getRating());
+                pstmt.setString(5, movie.getStatus());
+                pstmt.setString(6, movie.getDateAdded());
+                pstmt.setString(7, movie.getPosterUrl() == null ? "" : movie.getPosterUrl());
                 pstmt.executeUpdate();
             }
+        } catch (Exception e) {
+            System.err.println("Failed to seed initial data from JSON: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -109,7 +100,7 @@ public class DatabaseManager {
      */
     public static List<Movie> getAllMovies() {
         List<Movie> list = new ArrayList<>();
-        String query = "SELECT id, title, genre, release_year, rating, status, date_added FROM movies ORDER BY id DESC;";
+        String query = "SELECT id, title, genre, release_year, rating, status, date_added, poster_url FROM movies ORDER BY id DESC;";
 
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
@@ -122,7 +113,8 @@ public class DatabaseManager {
                     rs.getInt("release_year"),
                     rs.getDouble("rating"),
                     rs.getString("status"),
-                    rs.getString("date_added")
+                    rs.getString("date_added"),
+                    rs.getString("poster_url")
                 ));
             }
         } catch (SQLException e) {
@@ -136,7 +128,7 @@ public class DatabaseManager {
      * CREATE: Inserts a new movie into the database and returns the generated ID.
      */
     public static int addMovie(Movie movie) {
-        String sql = "INSERT INTO movies (title, genre, release_year, rating, status, date_added) VALUES (?, ?, ?, ?, ?, ?);";
+        String sql = "INSERT INTO movies (title, genre, release_year, rating, status, date_added, poster_url) VALUES (?, ?, ?, ?, ?, ?, ?);";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, movie.getTitle());
@@ -145,6 +137,7 @@ public class DatabaseManager {
             pstmt.setDouble(4, movie.getRating());
             pstmt.setString(5, movie.getStatus());
             pstmt.setString(6, movie.getDateAdded());
+            pstmt.setString(7, movie.getPosterUrl() == null ? "" : movie.getPosterUrl());
 
             int affected = pstmt.executeUpdate();
             if (affected > 0) {
@@ -167,7 +160,7 @@ public class DatabaseManager {
      * UPDATE: Updates an existing movie record in the database.
      */
     public static boolean updateMovie(Movie movie) {
-        String sql = "UPDATE movies SET title = ?, genre = ?, release_year = ?, rating = ?, status = ?, date_added = ? WHERE id = ?;";
+        String sql = "UPDATE movies SET title = ?, genre = ?, release_year = ?, rating = ?, status = ?, date_added = ?, poster_url = ? WHERE id = ?;";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, movie.getTitle());
@@ -176,7 +169,8 @@ public class DatabaseManager {
             pstmt.setDouble(4, movie.getRating());
             pstmt.setString(5, movie.getStatus());
             pstmt.setString(6, movie.getDateAdded());
-            pstmt.setInt(7, movie.getId());
+            pstmt.setString(7, movie.getPosterUrl() == null ? "" : movie.getPosterUrl());
+            pstmt.setInt(8, movie.getId());
 
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
