@@ -15,6 +15,12 @@ import java.io.IOException;
 public class MainApp extends Application {
 
     @Override
+    public void init() {
+        // Set standard User-Agent header so JavaFX Image can load web posters from CDN URLs without 403 Forbidden
+        System.setProperty("http.agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+    }
+
+    @Override
     public void start(Stage primaryStage) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/MainView.fxml"));
@@ -42,6 +48,8 @@ public class MainApp extends Application {
      * Standard main method to launch JavaFX application.
      */
     public static void main(String[] args) {
+        // Ensure User-Agent is set before JavaFX launches
+        System.setProperty("http.agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         launch(args);
     }
 }

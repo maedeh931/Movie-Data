@@ -1,0 +1,56 @@
+[
+  {
+    "title": "Interstellar",
+    "genre": "Sci-Fi",
+    "releaseYear": 2014,
+    "rating": 8.7,
+    "status": "Watched",
+    "dateAdded": "04/09/26",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg"
+  },
+  {
+    "title": "Dune",
+    "genre": "Sci-Fi",
+    "releaseYear": 2021,
+    "rating": 8.0,
+    "status": "Want to Watch",
+    "dateAdded": "02/09/26",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg"
+  },
+  {
+    "title": "Dune: Part Two",
+    "genre": "Sci-Fi",
+    "releaseYear": 2024,
+    "rating": 8.6,
+    "status": "Watched",
+    "dateAdded": "05/09/26",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg"
+  },
+  {
+    "title": "Parasite",
+    "genre": "Drama",
+    "releaseYear": 2019,
+    "rating": 8.5,
+    "status": "Watched",
+    "dateAdded": "01/09/26",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg"
+  },
+  {
+    "title": "The Shawshank Redemption",
+    "genre": "Drama",
+    "releaseYear": 1994,
+    "rating": 9.3,
+    "status": "Watched",
+    "dateAdded": "25/08/26",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg"
+  },
+  {
+    "title": "The Batman",
+    "genre": "Action",
+    "releaseYear": 2022,
+    "rating": 7.8,
+    "status": "Watched",
+    "dateAdded": "27/08/26",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg"
+  }
+]

@@ -20,6 +20,20 @@ public class DatabaseManager {
     private static final String DB_URL = "jdbc:sqlite:cinevault.db";
 
     /**
+     * DTO for Gson JSON deserialization since JavaFX Property fields in Movie
+     * cannot be directly instantiated by Gson reflection.
+     */
+    public static class MovieDTO {
+        public String title;
+        public String genre;
+        public int releaseYear;
+        public double rating;
+        public String status;
+        public String dateAdded;
+        public String posterUrl;
+    }
+
+    /**
      * Initializes the SQLite database, creates the movies table if it doesn't exist,
      * and seeds initial demo movies if table is empty.
      */
@@ -76,17 +90,17 @@ public class DatabaseManager {
              PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
              
             Gson gson = new Gson();
-            Type movieListType = new TypeToken<ArrayList<Movie>>(){}.getType();
-            List<Movie> movies = gson.fromJson(reader, movieListType);
+            Type movieListType = new TypeToken<ArrayList<MovieDTO>>(){}.getType();
+            List<MovieDTO> movies = gson.fromJson(reader, movieListType);
             
-            for (Movie movie : movies) {
-                pstmt.setString(1, movie.getTitle());
-                pstmt.setString(2, movie.getGenre());
-                pstmt.setInt(3, movie.getReleaseYear());
-                pstmt.setDouble(4, movie.getRating());
-                pstmt.setString(5, movie.getStatus());
-                pstmt.setString(6, movie.getDateAdded());
-                pstmt.setString(7, movie.getPosterUrl() == null ? "" : movie.getPosterUrl());
+            for (MovieDTO dto : movies) {
+                pstmt.setString(1, dto.title);
+                pstmt.setString(2, dto.genre);
+                pstmt.setInt(3, dto.releaseYear);
+                pstmt.setDouble(4, dto.rating);
+                pstmt.setString(5, dto.status);
+                pstmt.setString(6, dto.dateAdded);
+                pstmt.setString(7, dto.posterUrl == null ? "" : dto.posterUrl);
                 pstmt.executeUpdate();
             }
         } catch (Exception e) {

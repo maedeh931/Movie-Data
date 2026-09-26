@@ -254,33 +254,46 @@ public class MainController {
         VBox card = new VBox();
         card.getStyleClass().add("movie-card");
 
-        // 1. Tall Vibrant Gradient Poster Box / Real Image Poster
+        // 1. Poster Box with Image support and Gradient/Initials Fallback
         StackPane posterBox = new StackPane();
         posterBox.getStyleClass().add("card-poster");
 
+        int gradientIndex = Math.abs(movie.getTitle().hashCode()) % POSTER_GRADIENTS.length;
+        String gradient = POSTER_GRADIENTS[gradientIndex];
+        posterBox.setStyle("-fx-background-color: " + gradient + ";");
+
+        Label initialsLabel = new Label(getMovieInitials(movie.getTitle()));
+        initialsLabel.getStyleClass().add("card-initials");
+        posterBox.getChildren().add(initialsLabel);
+
+        // Clip rounded corners on top of poster
+        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(175, 190);
+        clip.setArcWidth(22);
+        clip.setArcHeight(22);
+        posterBox.setClip(clip);
+
         if (movie.getPosterUrl() != null && !movie.getPosterUrl().trim().isEmpty()) {
-            javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
             try {
-                javafx.scene.image.Image image = new javafx.scene.image.Image(movie.getPosterUrl(), 175, 260, true, true, true);
-                imageView.setImage(image);
+                javafx.scene.image.Image image = new javafx.scene.image.Image(movie.getPosterUrl().trim(), 175, 190, false, true, true);
+                javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(image);
                 imageView.setFitWidth(175);
-                imageView.setFitHeight(260);
-                posterBox.getChildren().add(imageView);
-            } catch (Exception e) {
-                // Fallback to initials if URL is invalid or fails to load
-                int gradientIndex = Math.abs(movie.getTitle().hashCode()) % POSTER_GRADIENTS.length;
-                posterBox.setStyle("-fx-background-color: " + POSTER_GRADIENTS[gradientIndex] + ";");
-                Label initialsLabel = new Label(getMovieInitials(movie.getTitle()));
-                initialsLabel.getStyleClass().add("card-initials");
-                posterBox.getChildren().add(initialsLabel);
+                imageView.setFitHeight(190);
+
+                image.progressProperty().addListener((obs, oldVal, newVal) -> {
+                    if (newVal.doubleValue() == 1.0 && !image.isError()) {
+                        posterBox.getChildren().clear();
+                        posterBox.setStyle("-fx-background-color: transparent;");
+                        posterBox.getChildren().add(imageView);
+                    }
+                });
+
+                if (image.getProgress() == 1.0 && !image.isError()) {
+                    posterBox.getChildren().clear();
+                    posterBox.setStyle("-fx-background-color: transparent;");
+                    posterBox.getChildren().add(imageView);
+                }
+            } catch (Exception ignored) {
             }
-        } else {
-            // Fallback to initials
-            int gradientIndex = Math.abs(movie.getTitle().hashCode()) % POSTER_GRADIENTS.length;
-            posterBox.setStyle("-fx-background-color: " + POSTER_GRADIENTS[gradientIndex] + ";");
-            Label initialsLabel = new Label(getMovieInitials(movie.getTitle()));
-            initialsLabel.getStyleClass().add("card-initials");
-            posterBox.getChildren().add(initialsLabel);
         }
 
         // 2. Dark Footer
@@ -769,6 +782,7 @@ public class MainController {
             scene.getStylesheets().add(getClass().getResource("/styles/application.css").toExternalForm());
             dialogStage.setScene(scene);
             dialogStage.setResizable(false);
+            dialogStage.sizeToScene();
 
             MovieDialogController controller = loader.getController();
             controller.setDialogStage(dialogStage);

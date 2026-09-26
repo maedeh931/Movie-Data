@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefWidth="500.0" spacing="16.0" styleClass="cinevault-dialog" stylesheets="@../styles/application.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.student.movieapp.controller.MovieDialogController">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="540.0" prefWidth="520.0" spacing="16.0" styleClass="cinevault-dialog" stylesheets="@../styles/application.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.student.movieapp.controller.MovieDialogController">
    <children>
       <!-- Dialog Title Section -->
       <VBox spacing="4.0">
@@ -26,16 +26,16 @@
       <GridPane styleClass="form-grid">
         <columnConstraints>
           <ColumnConstraints hgrow="NEVER" minWidth="110.0" prefWidth="120.0" />
-          <ColumnConstraints hgrow="ALWAYS" minWidth="260.0" prefWidth="320.0" />
+          <ColumnConstraints hgrow="ALWAYS" minWidth="260.0" prefWidth="340.0" />
         </columnConstraints>
         <rowConstraints>
-          <RowConstraints minHeight="42.0" prefHeight="46.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="42.0" prefHeight="46.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="42.0" prefHeight="46.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="42.0" prefHeight="46.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="42.0" prefHeight="46.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="42.0" prefHeight="46.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="42.0" prefHeight="46.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
             <Label styleClass="form-label" text="Movie Title:" />
@@ -57,7 +57,7 @@
             <ComboBox fx:id="statusComboBox" maxWidth="1.7976931348623157E308" promptText="Select Status" styleClass="dark-combo-box" GridPane.columnIndex="1" GridPane.rowIndex="5" />
 
             <Label styleClass="form-label" text="Poster URL:" GridPane.rowIndex="6" />
-            <TextField fx:id="posterUrlField" promptText="e.g. https://example.com/poster.jpg" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+            <TextField fx:id="posterUrlField" promptText="e.g. https://image.tmdb.org/... or web URL" GridPane.columnIndex="1" GridPane.rowIndex="6" />
          </children>
       </GridPane>
 

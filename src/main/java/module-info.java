@@ -7,6 +7,7 @@ module com.student.movieapp {
     opens com.student.movieapp to javafx.graphics;
     opens com.student.movieapp.controller to javafx.fxml;
     opens com.student.movieapp.model to javafx.base, com.google.gson;
+    opens com.student.movieapp.dao to com.google.gson;
 
     exports com.student.movieapp;
     exports com.student.movieapp.model;

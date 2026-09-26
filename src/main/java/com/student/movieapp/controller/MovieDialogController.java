@@ -110,6 +110,7 @@ public class MovieDialogController {
             dialogHeaderLabel.setText("Add Movie");
             statusComboBox.setValue("Want to Watch");
             datePicker.setValue(LocalDate.now());
+            posterUrlField.setText("");
         }
     }
 
