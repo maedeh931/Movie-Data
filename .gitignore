@@ -1,6 +1,7 @@
 target/
 *.class
 .idea/
+!.idea/runConfigurations/Run_Application.xml
 *.iml
 .vscode/
 *.db

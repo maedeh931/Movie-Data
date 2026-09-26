@@ -83,6 +83,18 @@ public class MainController {
     private Node selectedCardNode;
     private boolean isGridView = true;
 
+    /**
+     * Flag to block filter/sort listeners from triggering renderMovieCards()
+     * during the initialization sequence before setup is complete.
+     */
+    private boolean isInitializing = true;
+
+    /**
+     * Image cache: maps a poster URL to its already-loaded JavaFX Image.
+     * Survives card rebuilds so posters don't flash back to initials on refresh.
+     */
+    private static final java.util.Map<String, javafx.scene.image.Image> imageCache = new java.util.HashMap<>();
+
     // Predefined dynamic gradients for poster cards
     private static final String[] POSTER_GRADIENTS = {
             "linear-gradient(to bottom right, #8b5cf6, #ec4899)", // Purple to Pink
@@ -103,11 +115,12 @@ public class MainController {
     @FXML
     private void initialize() {
         activeNavButton = navAllMovies;
+        isInitializing = true; // block listeners from firing early
 
         // 1. Setup Table Columns
         setupTableColumns();
 
-        // 2. Setup Filter & Sort ComboBoxes
+        // 2. Setup Filter & Sort ComboBoxes (setValue calls trigger setOnAction, guarded by isInitializing)
         setupComboBoxes();
 
         // 3. Load Rich Demo Dataset
@@ -130,11 +143,14 @@ public class MainController {
             }
         });
 
-        // 7. Initial UI Render
+        // 7. Initialization complete — allow listeners to re-render from now on
+        isInitializing = false;
+
+        // 8. Single initial UI Render (only once, after full setup)
         renderMovieCards();
         updateStats();
 
-        // 8. Setup Global Keyboard Shortcuts after Scene Attachment
+        // 9. Setup Global Keyboard Shortcuts after Scene Attachment
         contentStackPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 setupKeyboardShortcuts(newScene);
@@ -258,41 +274,59 @@ public class MainController {
         StackPane posterBox = new StackPane();
         posterBox.getStyleClass().add("card-poster");
 
+        // Always set gradient + initials as the default/fallback background
         int gradientIndex = Math.abs(movie.getTitle().hashCode()) % POSTER_GRADIENTS.length;
-        String gradient = POSTER_GRADIENTS[gradientIndex];
-        posterBox.setStyle("-fx-background-color: " + gradient + ";");
-
+        posterBox.setStyle("-fx-background-color: " + POSTER_GRADIENTS[gradientIndex] + ";");
         Label initialsLabel = new Label(getMovieInitials(movie.getTitle()));
         initialsLabel.getStyleClass().add("card-initials");
         posterBox.getChildren().add(initialsLabel);
 
-        // Clip rounded corners on top of poster
+        // Clip rounded top corners
         javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(175, 190);
         clip.setArcWidth(22);
         clip.setArcHeight(22);
         posterBox.setClip(clip);
 
-        if (movie.getPosterUrl() != null && !movie.getPosterUrl().trim().isEmpty()) {
-            try {
-                javafx.scene.image.Image image = new javafx.scene.image.Image(movie.getPosterUrl().trim(), 175, 190, false, true, true);
+        String posterUrl = movie.getPosterUrl();
+        if (posterUrl != null && !posterUrl.trim().isEmpty()) {
+            String url = posterUrl.trim();
+
+            // Check cache first — if image is already loaded, display it immediately
+            javafx.scene.image.Image cached = imageCache.get(url);
+            if (cached != null && !cached.isError()) {
+                javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(cached);
+                iv.setFitWidth(175);
+                iv.setFitHeight(190);
+                posterBox.getChildren().clear();
+                posterBox.setStyle("-fx-background-color: transparent;");
+                posterBox.getChildren().add(iv);
+            } else {
+                // Not cached yet — load in background; when done, update the box AND cache it
+                javafx.scene.image.Image image = new javafx.scene.image.Image(url, 175, 190, false, true, true);
                 javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(image);
                 imageView.setFitWidth(175);
                 imageView.setFitHeight(190);
 
-                image.progressProperty().addListener((obs, oldVal, newVal) -> {
-                    if (newVal.doubleValue() == 1.0 && !image.isError()) {
-                        posterBox.getChildren().clear();
-                        posterBox.setStyle("-fx-background-color: transparent;");
-                        posterBox.getChildren().add(imageView);
+                Runnable displayPoster = () -> {
+                    if (!image.isError()) {
+                        imageCache.put(url, image);                 // store in cache
+                        javafx.application.Platform.runLater(() -> {
+                            posterBox.getChildren().clear();
+                            posterBox.setStyle("-fx-background-color: transparent;");
+                            posterBox.getChildren().add(imageView); // show in this card
+                        });
                     }
-                });
+                };
 
-                if (image.getProgress() == 1.0 && !image.isError()) {
-                    posterBox.getChildren().clear();
-                    posterBox.setStyle("-fx-background-color: transparent;");
-                    posterBox.getChildren().add(imageView);
+                if (image.getProgress() >= 1.0) {
+                    displayPoster.run();
+                } else {
+                    image.progressProperty().addListener((obs, oldVal, newVal) -> {
+                        if (newVal.doubleValue() >= 1.0) {
+                            displayPoster.run();
+                        }
+                    });
                 }
-            } catch (Exception ignored) {
             }
         }
 
@@ -438,6 +472,8 @@ public class MainController {
      */
     @FXML
     private void handleSearchAndFilter() {
+        if (isInitializing) return; // skip during setup to prevent premature card rebuilds
+
         String query = searchTextField.getText() != null ? searchTextField.getText().trim().toLowerCase() : "";
         String selectedGenre = genreFilterBox.getValue();
         String selectedStatus = statusFilterBox.getValue();
@@ -529,6 +565,8 @@ public class MainController {
      * Handles Sort ComboBox changes.
      */
     private void handleSortSelection() {
+        if (isInitializing) return; // skip during setup to prevent premature card rebuilds
+
         String selectedSort = sortComboBox.getValue();
         if (selectedSort == null) return;
 
@@ -678,8 +716,11 @@ public class MainController {
     private void handleEditMovie() {
         Movie target = getSelectedMovie();
         if (target != null) {
+            String oldUrl = target.getPosterUrl(); // remember old URL before edit
             boolean okClicked = showMovieDialog(target, "Edit Movie");
             if (okClicked) {
+                // Evict old URL from cache so updated URL loads fresh
+                if (oldUrl != null) imageCache.remove(oldUrl);
                 DatabaseManager.updateMovie(target);
                 renderMovieCards();
                 movieTableView.refresh();
@@ -735,13 +776,14 @@ public class MainController {
 
     @FXML
     private void handleRefresh() {
+        isInitializing = true;                              // suppress intermediate listener-triggered renders
         searchTextField.clear();
         genreFilterBox.setValue("All Genres");
         statusFilterBox.setValue("All Statuses");
         dateFilterPicker.setValue(null);
-        setActiveNav(navAllMovies, "All Movies");
         sortComboBox.setValue("Sort by: Recently Added");
-        handleSortSelection();
+        isInitializing = false;                             // re-enable
+        setActiveNav(navAllMovies, "All Movies");           // single, deliberate final render
     }
 
     private Movie getSelectedMovie() {

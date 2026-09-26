@@ -68,6 +68,9 @@
                         <id>default-cli</id>
                         <configuration>
                             <mainClass>com.student.movieapp.MainApp</mainClass>
+                            <options>
+                                <option>-Dhttp.agent=Mozilla/5.0</option>
+                            </options>
                         </configuration>
                     </execution>
                 </executions>
