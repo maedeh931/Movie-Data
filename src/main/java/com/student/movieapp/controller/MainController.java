@@ -95,6 +95,26 @@ public class MainController {
      */
     private static final java.util.Map<String, javafx.scene.image.Image> imageCache = new java.util.HashMap<>();
 
+    /**
+     * Dedicated fixed thread pool ExecutorService for asynchronous poster fetching.
+     * Uses daemon threads to ensure clean JVM shutdown.
+     */
+    private static final java.util.concurrent.ExecutorService posterExecutor =
+            java.util.concurrent.Executors.newFixedThreadPool(4, r -> {
+                Thread t = new Thread(r);
+                t.setDaemon(true);
+                return t;
+            });
+
+    /**
+     * Gracefully shuts down the background poster fetching thread pool.
+     */
+    public static void shutdownPosterExecutor() {
+        if (posterExecutor != null && !posterExecutor.isShutdown()) {
+            posterExecutor.shutdownNow();
+        }
+    }
+
     // Predefined dynamic gradients for poster cards
     private static final String[] POSTER_GRADIENTS = {
             "linear-gradient(to bottom right, #8b5cf6, #ec4899)", // Purple to Pink
@@ -301,37 +321,23 @@ public class MainController {
                 posterBox.setStyle("-fx-background-color: transparent;");
                 posterBox.getChildren().add(iv);
             } else {
-                // Not cached yet — load in background; when done, update the box AND cache it
-                javafx.scene.image.Image image = new javafx.scene.image.Image(url, 175, 190, false, true, true);
-                javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(image);
-                imageView.setFitWidth(175);
-                imageView.setFitHeight(190);
-
-                Runnable displayPoster = () -> {
+                // Not cached yet — submit fetch task to ExecutorService thread pool
+                posterExecutor.submit(() -> {
+                    // Synchronously load image on background worker thread
+                    javafx.scene.image.Image image = new javafx.scene.image.Image(url, 175, 190, false, true, false);
                     if (!image.isError()) {
                         imageCache.put(url, image);                 // store in cache
-                        Runnable updateUI = () -> {
+                        javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(image);
+                        imageView.setFitWidth(175);
+                        imageView.setFitHeight(190);
+
+                        javafx.application.Platform.runLater(() -> {
                             posterBox.getChildren().clear();
                             posterBox.setStyle("-fx-background-color: transparent;");
                             posterBox.getChildren().add(imageView); // show in this card
-                        };
-                        if (javafx.application.Platform.isFxApplicationThread()) {
-                            updateUI.run();
-                        } else {
-                            javafx.application.Platform.runLater(updateUI);
-                        }
+                        });
                     }
-                };
-
-                if (image.getProgress() >= 1.0) {
-                    displayPoster.run();
-                } else {
-                    image.progressProperty().addListener((obs, oldVal, newVal) -> {
-                        if (newVal.doubleValue() >= 1.0) {
-                            displayPoster.run();
-                        }
-                    });
-                }
+                });
             }
         }
 

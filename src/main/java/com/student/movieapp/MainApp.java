@@ -46,6 +46,12 @@ public class MainApp extends Application {
         }
     }
 
+    @Override
+    public void stop() throws Exception {
+        super.stop();
+        com.student.movieapp.controller.MainController.shutdownPosterExecutor();
+    }
+
     /**
      * Standard main method to launch JavaFX application.
      */
