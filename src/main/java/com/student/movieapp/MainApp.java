@@ -26,23 +26,22 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/MainView.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/LoginView.fxml"));
             Parent root = loader.load();
 
-            Scene scene = new Scene(root, 1180, 780);
+            Scene scene = new Scene(root, 440, 480);
             
             // Apply stylesheet
             String cssPath = getClass().getResource("/styles/application.css").toExternalForm();
             scene.getStylesheets().add(cssPath);
 
-            primaryStage.setTitle("CineVault — Movie Tracker & Vault");
-            primaryStage.setMinWidth(1000);
-            primaryStage.setMinHeight(650);
+            primaryStage.setTitle("CineVault — Sign In");
+            primaryStage.setResizable(false);
             primaryStage.setScene(scene);
             primaryStage.show();
 
         } catch (IOException e) {
-            System.err.println("Failed to initialize application UI: " + e.getMessage());
+            System.err.println("Failed to initialize login UI: " + e.getMessage());
             e.printStackTrace();
         }
     }
