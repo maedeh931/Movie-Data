@@ -1,6 +1,9 @@
 package com.student.movieapp.controller;
 
 import com.student.movieapp.model.Movie;
+import com.student.movieapp.service.TmdbMovieResult;
+import com.student.movieapp.service.TmdbService;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -9,6 +12,9 @@ import javafx.stage.Stage;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Controller for the Add/Edit Movie modal dialog.
@@ -21,6 +27,12 @@ public class MovieDialogController {
 
     @FXML
     private TextField titleField;
+
+    @FXML
+    private Button searchTmdbButton;
+
+    @FXML
+    private Label tmdbStatusLabel;
 
     @FXML
     private ComboBox<String> genreComboBox;
@@ -50,6 +62,13 @@ public class MovieDialogController {
     private Movie movie;
     private boolean saveClicked = false;
 
+    private final TmdbService tmdbService = new TmdbService();
+    private static final ExecutorService TMDB_EXECUTOR = Executors.newFixedThreadPool(2, r -> {
+        Thread t = new Thread(r, "tmdb-search-thread");
+        t.setDaemon(true);
+        return t;
+    });
+
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy");
 
     /**
@@ -70,6 +89,9 @@ public class MovieDialogController {
 
         // Default date is today
         datePicker.setValue(LocalDate.now());
+
+        // Pressing Enter in title field performs TMDB search
+        titleField.setOnAction(e -> handleSearchTmdb());
     }
 
     /**
@@ -85,6 +107,7 @@ public class MovieDialogController {
      */
     public void setMovie(Movie movie) {
         this.movie = movie;
+        resetTmdbStatus();
 
         if (movie != null && movie.getTitle() != null && !movie.getTitle().isEmpty()) {
             dialogHeaderLabel.setText("Edit Movie");
@@ -111,6 +134,82 @@ public class MovieDialogController {
             statusComboBox.setValue("Want to Watch");
             datePicker.setValue(LocalDate.now());
             posterUrlField.setText("");
+        }
+    }
+
+    /**
+     * Searches TMDB asynchronously based on the entered movie title.
+     * Auto-fills poster URL, release year, and rating upon success.
+     */
+    @FXML
+    private void handleSearchTmdb() {
+        String title = titleField.getText() == null ? "" : titleField.getText().trim();
+        if (title.isEmpty()) {
+            showTmdbStatus("⚠ Please enter a movie title to search.", "#f87171");
+            return;
+        }
+
+        if (searchTmdbButton != null) {
+            searchTmdbButton.setDisable(true);
+        }
+        showTmdbStatus("Searching TMDB for \"" + title + "\"...", "#818cf8");
+
+        TMDB_EXECUTOR.submit(() -> {
+            try {
+                Optional<TmdbMovieResult> resultOpt = tmdbService.searchMovie(title);
+                Platform.runLater(() -> {
+                    if (searchTmdbButton != null) {
+                        searchTmdbButton.setDisable(false);
+                    }
+                    if (resultOpt.isPresent()) {
+                        TmdbMovieResult result = resultOpt.get();
+                        if (result.posterUrl() != null && !result.posterUrl().isBlank()) {
+                            posterUrlField.setText(result.posterUrl());
+                        }
+                        if (result.releaseYear() != null) {
+                            yearField.setText(String.valueOf(result.releaseYear()));
+                        }
+                        if (result.rating() != null) {
+                            ratingField.setText(String.valueOf(result.rating()));
+                        }
+                        if (result.genre() != null && genreComboBox.getItems().contains(result.genre())) {
+                            genreComboBox.setValue(result.genre());
+                        }
+                        showTmdbStatus("✓ Matched: " + result.title() + (result.releaseYear() != null ? " (" + result.releaseYear() + ")" : ""), "#34d399");
+                    } else {
+                        showTmdbStatus("⚠ No match found on TMDB. You can enter details manually.", "#fbbf24");
+                    }
+                });
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    if (searchTmdbButton != null) {
+                        searchTmdbButton.setDisable(false);
+                    }
+                    String msg = ex.getMessage();
+                    if (msg != null && msg.contains("API key")) {
+                        showTmdbStatus("⚠ TMDB API key missing in config.properties.", "#f87171");
+                    } else {
+                        showTmdbStatus("⚠ Search failed (" + (msg != null ? msg : "network error") + "). Enter details manually.", "#f87171");
+                    }
+                });
+            }
+        });
+    }
+
+    private void showTmdbStatus(String message, String colorHex) {
+        if (tmdbStatusLabel != null) {
+            tmdbStatusLabel.setText(message);
+            tmdbStatusLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: " + colorHex + ";");
+            tmdbStatusLabel.setVisible(true);
+            tmdbStatusLabel.setManaged(true);
+        }
+    }
+
+    private void resetTmdbStatus() {
+        if (tmdbStatusLabel != null) {
+            tmdbStatusLabel.setText("");
+            tmdbStatusLabel.setVisible(false);
+            tmdbStatusLabel.setManaged(false);
         }
     }
 

@@ -7,3 +7,5 @@ target/
 *.db
 .DS_Store
 *.log
+config.properties
+src/main/resources/config.properties

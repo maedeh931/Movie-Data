@@ -1,0 +1,3 @@
+# TMDB API Key configuration
+# Obtain an API key from https://www.themoviedb.org/settings/api
+tmdb.api.key=YOUR_TMDB_API_KEY_HERE

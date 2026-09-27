@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="540.0" prefWidth="520.0" spacing="16.0" styleClass="cinevault-dialog" stylesheets="@../styles/application.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.student.movieapp.controller.MovieDialogController">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="570.0" prefWidth="540.0" spacing="16.0" styleClass="cinevault-dialog" stylesheets="@../styles/application.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.student.movieapp.controller.MovieDialogController">
    <children>
       <!-- Dialog Title Section -->
       <VBox spacing="4.0">
@@ -26,10 +26,10 @@
       <GridPane styleClass="form-grid">
         <columnConstraints>
           <ColumnConstraints hgrow="NEVER" minWidth="110.0" prefWidth="120.0" />
-          <ColumnConstraints hgrow="ALWAYS" minWidth="260.0" prefWidth="340.0" />
+          <ColumnConstraints hgrow="ALWAYS" minWidth="260.0" prefWidth="360.0" />
         </columnConstraints>
         <rowConstraints>
-          <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="44.0" vgrow="SOMETIMES" />
           <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
           <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
           <RowConstraints minHeight="40.0" prefHeight="44.0" vgrow="SOMETIMES" />
@@ -39,7 +39,17 @@
         </rowConstraints>
          <children>
             <Label styleClass="form-label" text="Movie Title:" />
-            <TextField fx:id="titleField" promptText="e.g. Interstellar" GridPane.columnIndex="1" />
+            <VBox spacing="4.0" GridPane.columnIndex="1">
+               <children>
+                  <HBox alignment="CENTER_LEFT" spacing="8.0">
+                     <children>
+                        <TextField fx:id="titleField" promptText="e.g. Interstellar" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="searchTmdbButton" mnemonicParsing="false" onAction="#handleSearchTmdb" styleClass="btn-secondary-action" text="Search TMDB" minWidth="110.0" />
+                     </children>
+                  </HBox>
+                  <Label fx:id="tmdbStatusLabel" managed="false" style="-fx-font-size: 11px; -fx-text-fill: #a1a1aa;" text="" visible="false" wrapText="true" />
+               </children>
+            </VBox>
 
             <Label styleClass="form-label" text="Genre:" GridPane.rowIndex="1" />
             <ComboBox fx:id="genreComboBox" maxWidth="1.7976931348623157E308" promptText="Select Genre" styleClass="dark-combo-box" GridPane.columnIndex="1" GridPane.rowIndex="1" />
