@@ -504,11 +504,11 @@ public class MainController {
             // 2. Command query filter
             if (!query.isEmpty()) {
                 if (query.startsWith("filter sci-fi") || query.equals("sci-fi")) {
-                    if (!"Sci-Fi".equalsIgnoreCase(movie.getGenre())) return false;
+                    if (movie.getGenre() == null || !movie.getGenre().toLowerCase().contains("sci-fi")) return false;
                 } else if (query.startsWith("filter action") || query.equals("action")) {
-                    if (!"Action".equalsIgnoreCase(movie.getGenre())) return false;
+                    if (movie.getGenre() == null || !movie.getGenre().toLowerCase().contains("action")) return false;
                 } else if (query.startsWith("filter drama") || query.equals("drama")) {
-                    if (!"Drama".equalsIgnoreCase(movie.getGenre())) return false;
+                    if (movie.getGenre() == null || !movie.getGenre().toLowerCase().contains("drama")) return false;
                 } else if (query.startsWith("filter watched") || query.equals("watched")) {
                     if (!"Watched".equalsIgnoreCase(movie.getStatus())) return false;
                 } else {
@@ -524,7 +524,7 @@ public class MainController {
 
             // 3. Genre Dropdown
             if (selectedGenre != null && !selectedGenre.isEmpty() && !"All Genres".equalsIgnoreCase(selectedGenre)) {
-                if (movie.getGenre() == null || !movie.getGenre().equalsIgnoreCase(selectedGenre)) {
+                if (movie.getGenre() == null || (!movie.getGenre().equalsIgnoreCase(selectedGenre) && !movie.getGenre().toLowerCase().contains(selectedGenre.toLowerCase()))) {
                     return false;
                 }
             }

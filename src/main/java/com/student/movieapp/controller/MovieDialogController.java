@@ -112,7 +112,12 @@ public class MovieDialogController {
         if (movie != null && movie.getTitle() != null && !movie.getTitle().isEmpty()) {
             dialogHeaderLabel.setText("Edit Movie");
             titleField.setText(movie.getTitle());
-            genreComboBox.setValue(movie.getGenre());
+            if (movie.getGenre() != null && !movie.getGenre().isBlank()) {
+                if (!genreComboBox.getItems().contains(movie.getGenre())) {
+                    genreComboBox.getItems().add(movie.getGenre());
+                }
+                genreComboBox.setValue(movie.getGenre());
+            }
             yearField.setText(String.valueOf(movie.getReleaseYear()));
             ratingField.setText(String.valueOf(movie.getRating()));
             statusComboBox.setValue(movie.getStatus());
