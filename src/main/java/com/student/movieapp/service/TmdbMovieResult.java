@@ -1,8 +1,6 @@
 package com.student.movieapp.service;
 
-/**
- * Data holder for TMDB movie search results.
- */
+// Holds movie details found online from TMDB
 public record TmdbMovieResult(
         String title,
         Integer releaseYear,

@@ -1,10 +1,9 @@
 package com.student.movieapp;
 
-/**
- * Fallback entry point to avoid JavaFX runtime launcher issues
- * when running without module path switches.
- */
+// Simple backup launcher to start the app
 public class AppLauncher {
+
+    // Start the main application
     public static void main(String[] args) {
         MainApp.main(args);
     }

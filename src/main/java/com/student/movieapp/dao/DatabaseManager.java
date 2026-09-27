@@ -11,12 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Data Access Object (DAO) for managing SQLite database CRUD operations for CineVault.
- * Supports relational many-to-many genres via 'genres' and 'movie_genres' tables.
- */
+// Handles saving and loading movie data from the SQLite database
 public class DatabaseManager {
 
+    // Database file location and common genre names
     private static final String DB_URL = "jdbc:sqlite:cinevault.db";
 
     private static final String[] DEFAULT_GENRES = {
@@ -24,9 +22,7 @@ public class DatabaseManager {
             "Documentary", "Drama", "Horror", "Romance", "Sci-Fi", "Thriller"
     };
 
-    /**
-     * DTO for Jackson JSON deserialization.
-     */
+    // Simple object used when reading starting sample movies from JSON
     public static class MovieDTO {
         public String title;
         public String genre;
@@ -37,14 +33,9 @@ public class DatabaseManager {
         public String posterUrl;
     }
 
-    /**
-     * Initializes the SQLite database:
-     * 1. Creates movies table, genres table, and movie_genres join table.
-     * 2. Seeds default genres if not present.
-     * 3. Seeds initial movies if movies table is empty.
-     * 4. Migrates existing movie records to movie_genres if needed.
-     */
+    // Set up database tables and starting data when the app begins
     public static void initializeDatabase() {
+        // Table for storing movies
         String createMoviesTableSQL = """
             CREATE TABLE IF NOT EXISTS movies (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,6 +49,7 @@ public class DatabaseManager {
             );
         """;
 
+        // Table for storing unique genre names
         String createGenresTableSQL = """
             CREATE TABLE IF NOT EXISTS genres (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,6 +57,7 @@ public class DatabaseManager {
             );
         """;
 
+        // Join table linking movies to their genres
         String createMovieGenresTableSQL = """
             CREATE TABLE IF NOT EXISTS movie_genres (
                 movie_id INTEGER NOT NULL,
@@ -77,20 +70,20 @@ public class DatabaseManager {
 
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
+            // Create the tables and helper lookup indexes
             stmt.execute(createMoviesTableSQL);
             stmt.execute(createGenresTableSQL);
             stmt.execute(createMovieGenresTableSQL);
             stmt.execute("CREATE INDEX IF NOT EXISTS idx_movie_genres_movie ON movie_genres(movie_id);");
             stmt.execute("CREATE INDEX IF NOT EXISTS idx_movie_genres_genre ON movie_genres(genre_id);");
 
-            // Seed default genre dictionary
+            // Seed common genres so they are ready to use
             seedDefaultGenres(conn);
 
-            // Seed initial movies if table is empty
+            // Seed initial movies if table is empty, or migrate existing ones
             if (isTableEmpty(conn)) {
                 seedInitialData(conn);
             } else {
-                // Migrate any existing movies that do not have rows in movie_genres
                 migrateExistingMovieGenres(conn);
             }
         } catch (SQLException e) {
@@ -99,6 +92,7 @@ public class DatabaseManager {
         }
     }
 
+    // Connect to the SQLite database and turn on foreign key checks
     public static Connection getConnection() throws SQLException {
         Connection conn = DriverManager.getConnection(DB_URL);
         try (Statement stmt = conn.createStatement()) {
@@ -107,6 +101,7 @@ public class DatabaseManager {
         return conn;
     }
 
+    // Check if any movies already exist in the database
     private static boolean isTableEmpty(Connection conn) throws SQLException {
         String query = "SELECT COUNT(*) FROM movies;";
         try (Statement stmt = conn.createStatement();
@@ -118,9 +113,7 @@ public class DatabaseManager {
         return true;
     }
 
-    /**
-     * Seeds common genres into the genres table if they do not exist.
-     */
+    // Insert common starting genres into the database
     private static void seedDefaultGenres(Connection conn) throws SQLException {
         String sql = "INSERT OR IGNORE INTO genres (name) VALUES (?);";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -132,9 +125,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Migrates legacy movies that have text in `genre` but no rows in `movie_genres`.
-     */
+    // Copy existing movie genres into the new genres and join tables
     private static void migrateExistingMovieGenres(Connection conn) {
         String query = """
             SELECT m.id, m.genre FROM movies m
@@ -160,9 +151,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Pre-populates default demo records from JSON on first launch.
-     */
+    // Load sample movies from the JSON file on first startup
     private static void seedInitialData(Connection conn) {
         String insertSQL = "INSERT INTO movies (title, genre, release_year, rating, status, date_added, poster_url) VALUES (?, ?, ?, ?, ?, ?, ?);";
 
@@ -182,6 +171,7 @@ public class DatabaseManager {
                 pstmt.setString(7, dto.posterUrl == null ? "" : dto.posterUrl);
                 pstmt.executeUpdate();
 
+                // Connect the newly added movie to its genres in the join table
                 try (ResultSet keys = pstmt.getGeneratedKeys()) {
                     if (keys.next()) {
                         int movieId = keys.getInt(1);
@@ -195,21 +185,21 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Looks up or inserts a genre by name and returns its ID.
-     */
+    // Find a genre ID number by name, or create the genre if it does not exist
     public static int getOrCreateGenreId(Connection conn, String genreName) throws SQLException {
         if (genreName == null || genreName.trim().isEmpty()) {
             return -1;
         }
         String trimmed = genreName.trim();
 
+        // Insert the genre name if not already there
         String insertSql = "INSERT OR IGNORE INTO genres (name) VALUES (?);";
         try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
             pstmt.setString(1, trimmed);
             pstmt.executeUpdate();
         }
 
+        // Look up the ID number for this genre
         String selectSql = "SELECT id FROM genres WHERE LOWER(name) = LOWER(?);";
         try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
             pstmt.setString(1, trimmed);
@@ -222,12 +212,9 @@ public class DatabaseManager {
         return -1;
     }
 
-    /**
-     * Synchronizes a movie's linked genres in the movie_genres table.
-     * Supports comma-separated genres (e.g. "Action, Sci-Fi").
-     */
+    // Connect a movie to its genres in the join table
     public static void syncMovieGenres(Connection conn, int movieId, String genreStr) throws SQLException {
-        // Delete existing links
+        // Delete existing links for this movie first
         String deleteSql = "DELETE FROM movie_genres WHERE movie_id = ?;";
         try (PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
             pstmt.setInt(1, movieId);
@@ -238,6 +225,7 @@ public class DatabaseManager {
             return;
         }
 
+        // Link each genre in the comma-separated list
         String insertJoinSql = "INSERT OR IGNORE INTO movie_genres (movie_id, genre_id) VALUES (?, ?);";
         try (PreparedStatement pstmt = conn.prepareStatement(insertJoinSql)) {
             for (String part : genreStr.split(",")) {
@@ -255,12 +243,10 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * READ: Retrieves all movies from the database ordered by ID descending,
-     * aggregating genres from the movie_genres join table.
-     */
+    // Load all movies from the database along with their linked genres
     public static List<Movie> getAllMovies() {
         List<Movie> list = new ArrayList<>();
+        // Combine multiple genres for each movie into a single comma-separated list
         String query = """
             SELECT m.id, m.title, m.genre AS fallback_genre, m.release_year, m.rating,
                    m.status, m.date_added, m.poster_url,
@@ -298,10 +284,7 @@ public class DatabaseManager {
         return list;
     }
 
-    /**
-     * CREATE: Inserts a new movie into the database, synchronizes genres with movie_genres,
-     * and returns the generated ID.
-     */
+    // Save a brand new movie to the database and link its genres
     public static int addMovie(Movie movie) {
         String sql = "INSERT INTO movies (title, genre, release_year, rating, status, date_added, poster_url) VALUES (?, ?, ?, ?, ?, ?, ?);";
         try (Connection conn = getConnection();
@@ -320,6 +303,7 @@ public class DatabaseManager {
                     if (keys.next()) {
                         int id = keys.getInt(1);
                         movie.setId(id);
+                        // Save genre links in the join table
                         syncMovieGenres(conn, id, movie.getGenre());
                         return id;
                     }
@@ -332,9 +316,7 @@ public class DatabaseManager {
         return -1;
     }
 
-    /**
-     * UPDATE: Updates an existing movie record in the database and updates its genre relationships.
-     */
+    // Update movie details and refresh its genre connections
     public static boolean updateMovie(Movie movie) {
         String sql = "UPDATE movies SET title = ?, genre = ?, release_year = ?, rating = ?, status = ?, date_added = ?, poster_url = ? WHERE id = ?;";
         try (Connection conn = getConnection();
@@ -350,6 +332,7 @@ public class DatabaseManager {
 
             boolean updated = pstmt.executeUpdate() > 0;
             if (updated) {
+                // Refresh genre links
                 syncMovieGenres(conn, movie.getId(), movie.getGenre());
             }
             return updated;
@@ -360,12 +343,10 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * DELETE: Removes a movie record and its join table links from the database by ID.
-     */
+    // Delete a movie and remove its genre connections from the join table
     public static boolean deleteMovie(int id) {
         try (Connection conn = getConnection()) {
-            // Delete join table links
+            // Delete join table links first
             String deleteJoinSql = "DELETE FROM movie_genres WHERE movie_id = ?;";
             try (PreparedStatement pstmt = conn.prepareStatement(deleteJoinSql)) {
                 pstmt.setInt(1, id);
@@ -385,9 +366,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Retrieves all genre names from the database sorted alphabetically.
-     */
+    // Get a sorted alphabetical list of all known genres
     public static List<String> getAllGenres() {
         List<String> list = new ArrayList<>();
         String sql = "SELECT name FROM genres ORDER BY name ASC;";
@@ -403,9 +382,7 @@ public class DatabaseManager {
         return list;
     }
 
-    /**
-     * Retrieves all genre names linked to a specific movie.
-     */
+    // Get all genres linked to a specific movie
     public static List<String> getGenresForMovie(int movieId) {
         List<String> list = new ArrayList<>();
         String sql = """

@@ -25,14 +25,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-/**
- * Controller for the CineVault dark-mode dashboard.
- * Manages responsive Card Grid view, Table view, sidebar navigation collections,
- * power user command bar, dynamic statistics, and keyboard-first shortcuts.
- */
+// Controls the main movie dashboard screen
 public class MainController {
 
-    // --- Sidebar Navigation Controls ---
+    // Sidebar collection buttons
     @FXML private VBox sidebarCollectionsBox;
     @FXML private Button navAllMovies;
     @FXML private Button navWantToWatch;
@@ -43,7 +39,7 @@ public class MainController {
     @FXML private Button navMovieNight;
     @FXML private Button navAwardWinners;
 
-    // --- Header & Stats Controls ---
+    // Header stats and view switcher buttons
     @FXML private Label categoryTitleLabel;
     @FXML private Label totalMoviesStatLabel;
     @FXML private Label avgRatingStatLabel;
@@ -52,13 +48,13 @@ public class MainController {
     @FXML private Button tableViewToggleBtn;
     @FXML private ComboBox<String> sortComboBox;
 
-    // --- Command & Filter Bar Controls ---
+    // Search bar and filter dropdowns
     @FXML private TextField searchTextField;
     @FXML private ComboBox<String> genreFilterBox;
     @FXML private ComboBox<String> statusFilterBox;
     @FXML private DatePicker dateFilterPicker;
 
-    // --- Content Area & Views ---
+    // Grid and table display areas
     @FXML private StackPane contentStackPane;
     @FXML private ScrollPane gridScrollPane;
     @FXML private FlowPane movieCardsFlowPane;
@@ -70,7 +66,7 @@ public class MainController {
     @FXML private TableColumn<Movie, String> statusCol;
     @FXML private TableColumn<Movie, String> dateCol;
 
-    // --- Data Model & State ---
+    // Stored movie lists and screen tracking variables
     private final ObservableList<Movie> masterMovieList = FXCollections.observableArrayList();
     private FilteredList<Movie> filteredMovieList;
     private SortedList<Movie> sortedMovieList;
@@ -83,22 +79,13 @@ public class MainController {
     private Node selectedCardNode;
     private boolean isGridView = true;
 
-    /**
-     * Flag to block filter/sort listeners from triggering renderMovieCards()
-     * during the initialization sequence before setup is complete.
-     */
+    // Prevents duplicate screen updates while setting up
     private boolean isInitializing = true;
 
-    /**
-     * Image cache: maps a poster URL to its already-loaded JavaFX Image.
-     * Survives card rebuilds so posters don't flash back to initials on refresh.
-     */
+    // Remembers loaded posters so they don't reload when switching views
     private static final java.util.Map<String, javafx.scene.image.Image> imageCache = new java.util.HashMap<>();
 
-    /**
-     * Dedicated fixed thread pool ExecutorService for asynchronous poster fetching.
-     * Uses daemon threads to ensure clean JVM shutdown.
-     */
+    // Background worker threads for fetching movie posters
     private static final java.util.concurrent.ExecutorService posterExecutor =
             java.util.concurrent.Executors.newFixedThreadPool(4, r -> {
                 Thread t = new Thread(r);
@@ -106,16 +93,14 @@ public class MainController {
                 return t;
             });
 
-    /**
-     * Gracefully shuts down the background poster fetching thread pool.
-     */
+    // Shut down background workers when closing the app
     public static void shutdownPosterExecutor() {
         if (posterExecutor != null && !posterExecutor.isShutdown()) {
             posterExecutor.shutdownNow();
         }
     }
 
-    // Predefined dynamic gradients for poster cards
+    // Colorful background gradients for cards when no poster image is available
     private static final String[] POSTER_GRADIENTS = {
             "linear-gradient(to bottom right, #8b5cf6, #ec4899)", // Purple to Pink
             "linear-gradient(to bottom right, #06b6d4, #3b82f6)", // Cyan to Ocean Blue
@@ -129,33 +114,31 @@ public class MainController {
             "linear-gradient(to bottom right, #11998e, #38ef7d)"  // Cyber Lime
     };
 
-    /**
-     * Initializes controller, sets up bindings, renders demo data, and attaches listeners.
-     */
+    // Set up the dashboard when the screen first loads
     @FXML
     private void initialize() {
         activeNavButton = navAllMovies;
-        isInitializing = true; // block listeners from firing early
+        isInitializing = true;
 
-        // 1. Setup Table Columns
+        // 1. Configure the table view columns
         setupTableColumns();
 
-        // 2. Setup Filter & Sort ComboBoxes (setValue calls trigger setOnAction, guarded by isInitializing)
+        // 2. Set up the dropdown filters and sorting options
         setupComboBoxes();
 
-        // 3. Load Rich Demo Dataset
+        // 3. Load movies from the database
         loadDemoData();
 
-        // 4. Setup Filtered & Sorted Lists
+        // 4. Hook up live searching and sorting to the table
         filteredMovieList = new FilteredList<>(masterMovieList, p -> true);
         sortedMovieList = new SortedList<>(filteredMovieList);
         sortedMovieList.comparatorProperty().bind(movieTableView.comparatorProperty());
         movieTableView.setItems(sortedMovieList);
 
-        // 5. Setup Live Search Listener
+        // 5. Update results whenever the user types in the search bar
         searchTextField.textProperty().addListener((obs, oldVal, newVal) -> handleSearchAndFilter());
 
-        // 6. Setup Table Selection Sync
+        // 6. Highlight the matching card when a table row is clicked
         movieTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 selectedMovie = newVal;
@@ -163,14 +146,14 @@ public class MainController {
             }
         });
 
-        // 7. Initialization complete — allow listeners to re-render from now on
+        // 7. Ready for user interaction
         isInitializing = false;
 
-        // 8. Single initial UI Render (only once, after full setup)
+        // 8. Draw the movie cards and show starting collection stats
         renderMovieCards();
         updateStats();
 
-        // 9. Setup Global Keyboard Shortcuts after Scene Attachment
+        // 9. Turn on keyboard shortcuts once the window is ready
         contentStackPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 setupKeyboardShortcuts(newScene);
@@ -178,16 +161,14 @@ public class MainController {
         });
     }
 
-    /**
-     * Sets up TableView columns and custom cell renderers for dark theme badges.
-     */
+    // Connect table columns to movie details
     private void setupTableColumns() {
         titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
         genreCol.setCellValueFactory(new PropertyValueFactory<>("genre"));
         yearCol.setCellValueFactory(new PropertyValueFactory<>("releaseYear"));
         dateCol.setCellValueFactory(new PropertyValueFactory<>("dateAdded"));
 
-        // Rating column with yellow star
+        // Show yellow stars for ratings
         ratingCol.setCellValueFactory(new PropertyValueFactory<>("rating"));
         ratingCol.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -203,7 +184,7 @@ public class MainController {
             }
         });
 
-        // Status column with styled badge pill
+        // Show colorful status badge pills
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
         statusCol.setCellFactory(col -> new TableCell<>() {
             private final Label badge = new Label();
@@ -230,9 +211,7 @@ public class MainController {
         });
     }
 
-    /**
-     * Configures items and event listeners for Filter & Sort dropdowns.
-     */
+    // Add options to filter and sort dropdowns
     private void setupComboBoxes() {
         genreFilterBox.setItems(FXCollections.observableArrayList(
                 "All Genres", "Sci-Fi", "Action", "Drama", "Comedy",
@@ -249,7 +228,7 @@ public class MainController {
 
         dateFilterPicker.setOnAction(e -> handleSearchAndFilter());
 
-        // Sort selector
+        // Fill in sort dropdown options
         sortComboBox.setItems(FXCollections.observableArrayList(
                 "Sort by: Recently Added",
                 "Sort by: Highest Rating",
@@ -262,18 +241,14 @@ public class MainController {
         sortComboBox.setOnAction(e -> handleSortSelection());
     }
 
-    /**
-     * Initializes database and loads all persistent movie records.
-     */
+    // Load saved movies from the database into memory
     private void loadDemoData() {
         DatabaseManager.initializeDatabase();
         List<Movie> movies = DatabaseManager.getAllMovies();
         masterMovieList.setAll(movies);
     }
 
-    /**
-     * Generates and renders responsive Movie Cards in the Grid View FlowPane.
-     */
+    // Draw the movie cards in the grid view
     private void renderMovieCards() {
         movieCardsFlowPane.getChildren().clear();
 
@@ -283,25 +258,23 @@ public class MainController {
         }
     }
 
-    /**
-     * Builds a single modern dark-mode movie card with gradient poster and bold initials.
-     */
+    // Build a single visual card for a movie
     private VBox createMovieCard(Movie movie) {
         VBox card = new VBox();
         card.getStyleClass().add("movie-card");
 
-        // 1. Poster Box with Image support and Gradient/Initials Fallback
+        // 1. Top poster image area
         StackPane posterBox = new StackPane();
         posterBox.getStyleClass().add("card-poster");
 
-        // Always set gradient + initials as the default/fallback background
+        // Fallback colorful background with the movie initials
         int gradientIndex = Math.abs(movie.getTitle().hashCode()) % POSTER_GRADIENTS.length;
         posterBox.setStyle("-fx-background-color: " + POSTER_GRADIENTS[gradientIndex] + ";");
         Label initialsLabel = new Label(getMovieInitials(movie.getTitle()));
         initialsLabel.getStyleClass().add("card-initials");
         posterBox.getChildren().add(initialsLabel);
 
-        // Clip rounded top corners
+        // Round the top corners of the poster
         javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(175, 190);
         clip.setArcWidth(22);
         clip.setArcHeight(22);
@@ -311,7 +284,7 @@ public class MainController {
         if (posterUrl != null && !posterUrl.trim().isEmpty()) {
             String url = posterUrl.trim();
 
-            // Check cache first — if image is already loaded, display it immediately
+            // Load poster image from cache if available, or fetch in background
             javafx.scene.image.Image cached = imageCache.get(url);
             if (cached != null && !cached.isError()) {
                 javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(cached);
@@ -321,12 +294,11 @@ public class MainController {
                 posterBox.setStyle("-fx-background-color: transparent;");
                 posterBox.getChildren().add(iv);
             } else {
-                // Not cached yet — submit fetch task to ExecutorService thread pool
+                // Fetch the image on a background worker thread
                 posterExecutor.submit(() -> {
-                    // Synchronously load image on background worker thread
                     javafx.scene.image.Image image = new javafx.scene.image.Image(url, 175, 190, false, true, false);
                     if (!image.isError()) {
-                        imageCache.put(url, image);                 // store in cache
+                        imageCache.put(url, image);
                         javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(image);
                         imageView.setFitWidth(175);
                         imageView.setFitHeight(190);
@@ -334,24 +306,24 @@ public class MainController {
                         javafx.application.Platform.runLater(() -> {
                             posterBox.getChildren().clear();
                             posterBox.setStyle("-fx-background-color: transparent;");
-                            posterBox.getChildren().add(imageView); // show in this card
+                            posterBox.getChildren().add(imageView);
                         });
                     }
                 });
             }
         }
 
-        // 2. Dark Footer
+        // 2. Bottom card details area
         VBox footerBox = new VBox();
         footerBox.getStyleClass().add("card-footer");
 
-        // Title
+        // Movie title
         Label titleLabel = new Label(movie.getTitle());
         titleLabel.getStyleClass().add("card-title");
         titleLabel.setWrapText(false);
         titleLabel.setMaxWidth(155);
 
-        // Info Row: Star Rating + Release Year
+        // Rating and release year row
         HBox infoRow = new HBox(6);
         infoRow.setAlignment(Pos.CENTER_LEFT);
 
@@ -364,7 +336,7 @@ public class MainController {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // Status Badge Pill
+        // Status badge
         Label statusBadge = new Label(movie.getStatus().replace("to Watch", "").trim());
         if ("Watched".equalsIgnoreCase(movie.getStatus())) {
             statusBadge.getStyleClass().add("badge-status-watched");
@@ -376,7 +348,7 @@ public class MainController {
 
         infoRow.getChildren().addAll(ratingLabel, yearLabel, spacer, statusBadge);
 
-        // Genre line
+        // Genre text
         Label genreLabel = new Label(movie.getGenre());
         genreLabel.getStyleClass().add("card-genre-text");
 
@@ -384,7 +356,7 @@ public class MainController {
 
         card.getChildren().addAll(posterBox, footerBox);
 
-        // Card Selection & Interaction
+        // Select card on click, or open edit dialog on double click
         card.setOnMouseClicked(event -> {
             selectCard(card, movie);
             if (event.getClickCount() == 2) {
@@ -392,7 +364,7 @@ public class MainController {
             }
         });
 
-        // Context Menu
+        // Right-click context menu options
         ContextMenu contextMenu = new ContextMenu();
         MenuItem editItem = new MenuItem("Edit Movie");
         editItem.setOnAction(e -> {
@@ -418,6 +390,7 @@ public class MainController {
         contextMenu.getItems().addAll(editItem, toggleStatusItem, new SeparatorMenuItem(), deleteItem);
         card.setOnContextMenuRequested(event -> contextMenu.show(card, event.getScreenX(), event.getScreenY()));
 
+        // Highlight this card if it is currently selected
         if (selectedMovie != null && selectedMovie.getId() == movie.getId()) {
             card.getStyleClass().add("movie-card-selected");
             selectedCardNode = card;
@@ -426,9 +399,7 @@ public class MainController {
         return card;
     }
 
-    /**
-     * Extracts bold initials matching the specification (e.g. IN, DU, PA, SR, TB, OP).
-     */
+    // Generate 2-letter uppercase initials from the movie title
     public static String getMovieInitials(String title) {
         if (title == null || title.trim().isEmpty()) return "CV";
         String clean = title.trim();
@@ -445,9 +416,7 @@ public class MainController {
         }
     }
 
-    /**
-     * Selects a movie card and synchronizes with TableView.
-     */
+    // Highlight a clicked movie card and select it in the table
     private void selectCard(Node cardNode, Movie movie) {
         if (selectedCardNode != null) {
             selectedCardNode.getStyleClass().remove("movie-card-selected");
@@ -460,9 +429,7 @@ public class MainController {
         movieTableView.getSelectionModel().select(movie);
     }
 
-    /**
-     * Highlights corresponding card when selection changes in TableView.
-     */
+    // Highlight a movie card when selected from the table view
     private void highlightCardForMovie(Movie movie) {
         if (movieCardsFlowPane == null) return;
         for (Node node : movieCardsFlowPane.getChildren()) {
@@ -478,30 +445,28 @@ public class MainController {
         }
     }
 
-    /**
-     * Real-time search and filter handler across sidebar collections, text query, and dropdowns.
-     */
+    // Filter movies based on the search box, genre, status, and collection
     @FXML
     private void handleSearchAndFilter() {
-        if (isInitializing) return; // skip during setup to prevent premature card rebuilds
+        if (isInitializing) return;
 
         String query = searchTextField.getText() != null ? searchTextField.getText().trim().toLowerCase() : "";
         String selectedGenre = genreFilterBox.getValue();
         String selectedStatus = statusFilterBox.getValue();
         LocalDate selectedDate = dateFilterPicker.getValue();
 
-        // Command detection (Power User view)
+        // Check for special commands typed in the search bar
         if ("add movie".equals(query) || "new movie".equals(query)) {
-            return; // handled on Enter in keyboard shortcuts
+            return;
         }
 
         filteredMovieList.setPredicate(movie -> {
-            // 1. Sidebar Collection Filter
+            // 1. Filter by selected sidebar collection
             if (!matchCollection(movie, currentCollection)) {
                 return false;
             }
 
-            // 2. Command query filter
+            // 2. Filter by search text
             if (!query.isEmpty()) {
                 if (query.startsWith("filter sci-fi") || query.equals("sci-fi")) {
                     if (movie.getGenre() == null || !movie.getGenre().toLowerCase().contains("sci-fi")) return false;
@@ -522,21 +487,21 @@ public class MainController {
                 }
             }
 
-            // 3. Genre Dropdown
+            // 3. Filter by selected genre
             if (selectedGenre != null && !selectedGenre.isEmpty() && !"All Genres".equalsIgnoreCase(selectedGenre)) {
                 if (movie.getGenre() == null || (!movie.getGenre().equalsIgnoreCase(selectedGenre) && !movie.getGenre().toLowerCase().contains(selectedGenre.toLowerCase()))) {
                     return false;
                 }
             }
 
-            // 4. Status Dropdown
+            // 4. Filter by watch status
             if (selectedStatus != null && !selectedStatus.isEmpty() && !"All Statuses".equalsIgnoreCase(selectedStatus)) {
                 if (movie.getStatus() == null || !movie.getStatus().equalsIgnoreCase(selectedStatus)) {
                     return false;
                 }
             }
 
-            // 5. Date Added Filter
+            // 5. Filter by date added
             if (selectedDate != null) {
                 String targetDateStr = selectedDate.format(dateFormatter);
                 if (movie.getDateAdded() == null || !movie.getDateAdded().equals(targetDateStr)) {
@@ -547,13 +512,12 @@ public class MainController {
             return true;
         });
 
+        // Redraw cards and update stats with the filtered results
         renderMovieCards();
         updateStats();
     }
 
-    /**
-     * Checks if a movie belongs to the chosen sidebar collection.
-     */
+    // Check if a movie belongs in the currently active sidebar collection
     private boolean matchCollection(Movie movie, String collection) {
         if ("All Movies".equalsIgnoreCase(collection)) return true;
         if ("Want to Watch".equalsIgnoreCase(collection)) return "Want to Watch".equalsIgnoreCase(movie.getStatus());
@@ -572,11 +536,9 @@ public class MainController {
         return true;
     }
 
-    /**
-     * Handles Sort ComboBox changes.
-     */
+    // Reorder the movie list based on the chosen sort option
     private void handleSortSelection() {
-        if (isInitializing) return; // skip during setup to prevent premature card rebuilds
+        if (isInitializing) return;
 
         String selectedSort = sortComboBox.getValue();
         if (selectedSort == null) return;
@@ -609,9 +571,7 @@ public class MainController {
         movieTableView.refresh();
     }
 
-    /**
-     * Updates header statistics: total count, average rating, and estimated watch time.
-     */
+    // Update total count, average rating, and estimated watch time in the header
     private void updateStats() {
         int count = filteredMovieList.size();
         totalMoviesStatLabel.setText(count + (count == 1 ? " movie" : " movies"));
@@ -620,7 +580,7 @@ public class MainController {
             double avg = filteredMovieList.stream().mapToDouble(Movie::getRating).average().orElse(0.0);
             avgRatingStatLabel.setText(String.format("★ %.1f avg rating", avg));
 
-            // Estimated runtime ~2 hours per film
+            // Estimate watch time at around 2 hours per film
             int hours = count * 2;
             watchTimeStatLabel.setText("⏱ " + hours + " hours");
         } else {
@@ -629,8 +589,7 @@ public class MainController {
         }
     }
 
-    // --- Sidebar Collection Handlers ---
-
+    // Switch active sidebar collection button and filter the movies
     private void setActiveNav(Button btn, String collectionName) {
         if (activeNavButton != null) {
             activeNavButton.getStyleClass().remove("sidebar-nav-item-active");
@@ -644,6 +603,7 @@ public class MainController {
         handleSearchAndFilter();
     }
 
+    // Quick handlers for clicking each sidebar collection
     @FXML private void handleNavAllMovies() { setActiveNav(navAllMovies, "All Movies"); }
     @FXML private void handleNavWantToWatch() { setActiveNav(navWantToWatch, "Want to Watch"); }
     @FXML private void handleNavWatched() { setActiveNav(navWatched, "Watched"); }
@@ -653,9 +613,7 @@ public class MainController {
     @FXML private void handleNavMovieNight() { setActiveNav(navMovieNight, "Movie Night"); }
     @FXML private void handleNavAwardWinners() { setActiveNav(navAwardWinners, "Award Winners"); }
 
-    /**
-     * Prompts user to create a new custom collection and appends it to the sidebar.
-     */
+    // Ask the user for a new collection name and add it to the sidebar
     @FXML
     private void handleNewCollection() {
         TextInputDialog dialog = new TextInputDialog();
@@ -679,8 +637,7 @@ public class MainController {
         });
     }
 
-    // --- View Toggle Handlers (Grid vs Table) ---
-
+    // Switch to card grid view
     @FXML
     private void handleShowGridView() {
         isGridView = true;
@@ -690,6 +647,7 @@ public class MainController {
         tableViewToggleBtn.getStyleClass().remove("view-toggle-btn-active");
     }
 
+    // Switch to table view
     @FXML
     private void handleShowTableView() {
         isGridView = false;
@@ -699,8 +657,7 @@ public class MainController {
         gridViewToggleBtn.getStyleClass().remove("view-toggle-btn-active");
     }
 
-    // --- CRUD Movie Actions ---
-
+    // Open dialog to add a new movie
     @FXML
     private void handleAddMovie() {
         Movie tempMovie = new Movie();
@@ -723,14 +680,15 @@ public class MainController {
         }
     }
 
+    // Open dialog to edit the selected movie
     @FXML
     private void handleEditMovie() {
         Movie target = getSelectedMovie();
         if (target != null) {
-            String oldUrl = target.getPosterUrl(); // remember old URL before edit
+            String oldUrl = target.getPosterUrl();
             boolean okClicked = showMovieDialog(target, "Edit Movie");
             if (okClicked) {
-                // Evict old URL from cache so updated URL loads fresh
+                // Remove old poster from cache so new one loads fresh
                 if (oldUrl != null) imageCache.remove(oldUrl);
                 DatabaseManager.updateMovie(target);
                 renderMovieCards();
@@ -749,6 +707,7 @@ public class MainController {
         }
     }
 
+    // Confirm and delete the selected movie
     @FXML
     private void handleDeleteMovie() {
         Movie target = getSelectedMovie();
@@ -780,23 +739,26 @@ public class MainController {
         }
     }
 
+    // Run the filter check
     @FXML
     private void handleFilter() {
         handleSearchAndFilter();
     }
 
+    // Reset all filters back to default
     @FXML
     private void handleRefresh() {
-        isInitializing = true;                              // suppress intermediate listener-triggered renders
+        isInitializing = true;
         searchTextField.clear();
         genreFilterBox.setValue("All Genres");
         statusFilterBox.setValue("All Statuses");
         dateFilterPicker.setValue(null);
         sortComboBox.setValue("Sort by: Recently Added");
-        isInitializing = false;                             // re-enable
-        setActiveNav(navAllMovies, "All Movies");           // single, deliberate final render
+        isInitializing = false;
+        setActiveNav(navAllMovies, "All Movies");
     }
 
+    // Get the currently selected movie from either grid or table
     private Movie getSelectedMovie() {
         if (isGridView) {
             return selectedMovie != null ? selectedMovie : movieTableView.getSelectionModel().getSelectedItem();
@@ -806,6 +768,7 @@ public class MainController {
         }
     }
 
+    // Show a popup warning if no movie was selected
     private void showNoSelectionWarning(String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         applyDarkThemeToDialog(alert);
@@ -815,9 +778,7 @@ public class MainController {
         alert.showAndWait();
     }
 
-    /**
-     * Shows modal Add/Edit dialog with dark styling.
-     */
+    // Open the Add/Edit movie popup dialog
     private boolean showMovieDialog(Movie movie, String dialogTitle) {
         try {
             FXMLLoader loader = new FXMLLoader();
@@ -855,9 +816,7 @@ public class MainController {
         }
     }
 
-    /**
-     * Registers keyboard-first shortcuts across the application scene.
-     */
+    // Handle keyboard shortcuts (Ctrl+K, Ctrl+N, Ctrl+G, Ctrl+T, Delete, Enter, Escape)
     private void setupKeyboardShortcuts(Scene scene) {
         scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.isControlDown() || event.isMetaDown()) {
@@ -904,9 +863,7 @@ public class MainController {
         });
     }
 
-    /**
-     * Applies dark theme stylesheets to Alert and Dialog panes.
-     */
+    // Apply dark theme styling to popup alerts and dialogs
     public void applyDarkThemeToDialog(Dialog<?> dialog) {
         DialogPane pane = dialog.getDialogPane();
         pane.getStylesheets().add(getClass().getResource("/styles/application.css").toExternalForm());

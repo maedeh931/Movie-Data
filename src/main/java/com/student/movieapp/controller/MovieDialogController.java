@@ -16,12 +16,10 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Controller for the Add/Edit Movie modal dialog.
- * Handles user input, validation, and alerts according to project specifications.
- */
+// Controls the Add and Edit Movie popup window
 public class MovieDialogController {
 
+    // Screen inputs and buttons on the popup dialog
     @FXML
     private Label dialogHeaderLabel;
 
@@ -58,10 +56,12 @@ public class MovieDialogController {
     @FXML
     private Button cancelButton;
 
+    // Window and data state
     private Stage dialogStage;
     private Movie movie;
     private boolean saveClicked = false;
 
+    // Background workers and helpers
     private final TmdbService tmdbService = new TmdbService();
     private static final ExecutorService TMDB_EXECUTOR = Executors.newFixedThreadPool(2, r -> {
         Thread t = new Thread(r, "tmdb-search-thread");
@@ -71,44 +71,38 @@ public class MovieDialogController {
 
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy");
 
-    /**
-     * Initializes combo box items and default values.
-     */
+    // Fill in starting options when the dialog opens
     @FXML
     private void initialize() {
-        // Genres supported
+        // Add standard movie genres to the dropdown
         genreComboBox.setItems(FXCollections.observableArrayList(
                 "Sci-Fi", "Action", "Drama", "Comedy", "Horror",
                 "Romance", "Thriller", "Animation", "Adventure", "Crime", "Documentary"
         ));
 
-        // Watch statuses supported
+        // Add watch status choices to the dropdown
         statusComboBox.setItems(FXCollections.observableArrayList(
                 "Want to Watch", "Watching", "Watched"
         ));
 
-        // Default date is today
+        // Set today's date as default
         datePicker.setValue(LocalDate.now());
 
-        // Pressing Enter in title field performs TMDB search
+        // Let the user hit Enter in the title box to search TMDB
         titleField.setOnAction(e -> handleSearchTmdb());
     }
 
-    /**
-     * Sets the stage for this modal dialog.
-     */
+    // Connect this controller to the dialog window
     public void setDialogStage(Stage dialogStage) {
         this.dialogStage = dialogStage;
     }
 
-    /**
-     * Sets the movie to be edited in the dialog.
-     * If movie is null or empty, it behaves as "Add Movie".
-     */
+    // Populate the form fields with movie details
     public void setMovie(Movie movie) {
         this.movie = movie;
         resetTmdbStatus();
 
+        // If editing an existing movie, fill in all its details
         if (movie != null && movie.getTitle() != null && !movie.getTitle().isEmpty()) {
             dialogHeaderLabel.setText("Edit Movie");
             titleField.setText(movie.getTitle());
@@ -135,6 +129,7 @@ public class MovieDialogController {
                 }
             }
         } else {
+            // If adding a new movie, reset fields to fresh defaults
             dialogHeaderLabel.setText("Add Movie");
             statusComboBox.setValue("Want to Watch");
             datePicker.setValue(LocalDate.now());
@@ -142,23 +137,23 @@ public class MovieDialogController {
         }
     }
 
-    /**
-     * Searches TMDB asynchronously based on the entered movie title.
-     * Auto-fills poster URL, release year, and rating upon success.
-     */
+    // Search TMDB online when the user clicks Search TMDB
     @FXML
     private void handleSearchTmdb() {
+        // Make sure a title was entered first
         String title = titleField.getText() == null ? "" : titleField.getText().trim();
         if (title.isEmpty()) {
             showTmdbStatus("⚠ Please enter a movie title to search.", "#f87171");
             return;
         }
 
+        // Disable the search button and show searching status
         if (searchTmdbButton != null) {
             searchTmdbButton.setDisable(true);
         }
         showTmdbStatus("Searching TMDB for \"" + title + "\"...", "#818cf8");
 
+        // Run the web search on a background worker thread
         TMDB_EXECUTOR.submit(() -> {
             try {
                 Optional<TmdbMovieResult> resultOpt = tmdbService.searchMovie(title);
@@ -166,6 +161,7 @@ public class MovieDialogController {
                     if (searchTmdbButton != null) {
                         searchTmdbButton.setDisable(false);
                     }
+                    // If a movie was found, fill in its poster, year, rating, and genre
                     if (resultOpt.isPresent()) {
                         TmdbMovieResult result = resultOpt.get();
                         if (result.posterUrl() != null && !result.posterUrl().isBlank()) {
@@ -182,10 +178,12 @@ public class MovieDialogController {
                         }
                         showTmdbStatus("✓ Matched: " + result.title() + (result.releaseYear() != null ? " (" + result.releaseYear() + ")" : ""), "#34d399");
                     } else {
+                        // If no movie was found, let the user know gently
                         showTmdbStatus("⚠ No match found on TMDB. You can enter details manually.", "#fbbf24");
                     }
                 });
             } catch (Exception ex) {
+                // Show an error message if something went wrong with the search
                 Platform.runLater(() -> {
                     if (searchTmdbButton != null) {
                         searchTmdbButton.setDisable(false);
@@ -201,6 +199,7 @@ public class MovieDialogController {
         });
     }
 
+    // Show a colored status message under the title box
     private void showTmdbStatus(String message, String colorHex) {
         if (tmdbStatusLabel != null) {
             tmdbStatusLabel.setText(message);
@@ -210,6 +209,7 @@ public class MovieDialogController {
         }
     }
 
+    // Hide the status message
     private void resetTmdbStatus() {
         if (tmdbStatusLabel != null) {
             tmdbStatusLabel.setText("");
@@ -218,16 +218,12 @@ public class MovieDialogController {
         }
     }
 
-    /**
-     * Returns true if user clicked Save, false otherwise.
-     */
+    // Check whether the user clicked Save or Cancel
     public boolean isSaveClicked() {
         return saveClicked;
     }
 
-    /**
-     * Handles Save button click. Validates all inputs before saving.
-     */
+    // Save the movie if all required fields are filled out correctly
     @FXML
     private void handleSave() {
         if (isInputValid()) {
@@ -235,6 +231,7 @@ public class MovieDialogController {
                 movie = new Movie();
             }
 
+            // Transfer the form inputs into the movie object
             movie.setTitle(titleField.getText().trim());
             movie.setGenre(genreComboBox.getValue());
             movie.setReleaseYear(Integer.parseInt(yearField.getText().trim()));
@@ -249,15 +246,15 @@ public class MovieDialogController {
             }
 
             saveClicked = true;
+
+            // Close the popup window
             if (dialogStage != null) {
                 dialogStage.close();
             }
         }
     }
 
-    /**
-     * Handles Cancel button click.
-     */
+    // Close the popup without saving
     @FXML
     private void handleCancel() {
         if (dialogStage != null) {
@@ -265,26 +262,21 @@ public class MovieDialogController {
         }
     }
 
-    /**
-     * Validates user input according to assignment requirements:
-     * - Required fields: title, genre, release year, rating, status, date
-     * - Release year: valid integer between 1888 and 2100
-     * - Rating: numeric between 0.0 and 10.0
-     */
+    // Check that the user filled in all required fields properly
     private boolean isInputValid() {
         StringBuilder errorMessage = new StringBuilder();
 
-        // Validate title
+        // Check the title
         if (titleField.getText() == null || titleField.getText().trim().isEmpty()) {
             errorMessage.append("• Title is required.\n");
         }
 
-        // Validate genre
+        // Check the genre
         if (genreComboBox.getValue() == null || genreComboBox.getValue().trim().isEmpty()) {
             errorMessage.append("• Genre must be selected.\n");
         }
 
-        // Validate release year
+        // Check the release year (must be between 1888 and 2100)
         if (yearField.getText() == null || yearField.getText().trim().isEmpty()) {
             errorMessage.append("• Release Year is required.\n");
         } else {
@@ -298,7 +290,7 @@ public class MovieDialogController {
             }
         }
 
-        // Validate rating
+        // Check the rating (must be between 0.0 and 10.0)
         if (ratingField.getText() == null || ratingField.getText().trim().isEmpty()) {
             errorMessage.append("• Rating is required.\n");
         } else {
@@ -312,35 +304,37 @@ public class MovieDialogController {
             }
         }
 
-        // Validate status
+        // Check the watch status
         if (statusComboBox.getValue() == null || statusComboBox.getValue().trim().isEmpty()) {
             errorMessage.append("• Watch status must be selected.\n");
         }
 
-        // Validate date
+        // Check the date
         if (datePicker.getValue() == null) {
             errorMessage.append("• Date Added must be selected.\n");
         }
 
+        // If no errors, we are good to go
         if (errorMessage.length() == 0) {
             return true;
         } else {
-            // Show error alert
+            // Show an alert popup if anything was entered incorrectly
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.initOwner(dialogStage);
             alert.setTitle("Invalid Input");
             alert.setHeaderText("Please correct the following errors:");
             alert.setContentText(errorMessage.toString());
-            
+
             DialogPane pane = alert.getDialogPane();
             pane.getStylesheets().add(getClass().getResource("/styles/application.css").toExternalForm());
             pane.getStyleClass().add("cinevault-dialog");
-            
+
             alert.showAndWait();
             return false;
         }
     }
 
+    // Return the saved movie
     public Movie getMovie() {
         return movie;
     }

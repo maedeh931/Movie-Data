@@ -2,11 +2,10 @@ package com.student.movieapp.model;
 
 import javafx.beans.property.*;
 
-/**
- * Model representing a Movie entity in the Movie Watchlist Manager.
- * Uses JavaFX properties for reactive UI data binding with TableView.
- */
+// Represents a single movie in the collection
 public class Movie {
+
+    // Stored details that automatically update the user interface
     private final IntegerProperty id;
     private final StringProperty title;
     private final StringProperty genre;
@@ -16,25 +15,12 @@ public class Movie {
     private final StringProperty dateAdded;
     private final StringProperty posterUrl;
 
-    /**
-     * Default constructor for empty initialization.
-     */
+    // Create a new movie with starting default values
     public Movie() {
         this(0, "", "", 0, 0.0, "Want to Watch", "", "");
     }
 
-    /**
-     * Full constructor.
-     *
-     * @param id          Unique movie ID
-     * @param title       Movie title
-     * @param genre       Movie genre (e.g. Sci-Fi, Action, Drama)
-     * @param releaseYear Release year (e.g. 2014)
-     * @param rating      IMDb / personal rating (e.g. 8.7)
-     * @param status      Watch status ("Want to Watch", "Watching", "Watched")
-     * @param dateAdded   Date string when the movie was added
-     * @param posterUrl   URL for the movie poster image
-     */
+    // Create a movie with all its details filled in
     public Movie(int id, String title, String genre, int releaseYear, double rating, String status, String dateAdded, String posterUrl) {
         this.id = new SimpleIntegerProperty(id);
         this.title = new SimpleStringProperty(title);
@@ -46,7 +32,7 @@ public class Movie {
         this.posterUrl = new SimpleStringProperty(posterUrl);
     }
 
-    // --- ID Property ---
+    // Database ID number
     public int getId() {
         return id.get();
     }
@@ -59,7 +45,7 @@ public class Movie {
         return id;
     }
 
-    // --- Title Property ---
+    // Movie title
     public String getTitle() {
         return title.get();
     }
@@ -72,7 +58,7 @@ public class Movie {
         return title;
     }
 
-    // --- Genre Property ---
+    // Movie genre or list of genres
     public String getGenre() {
         return genre.get();
     }
@@ -85,7 +71,7 @@ public class Movie {
         return genre;
     }
 
-    // --- Release Year Property ---
+    // Year the movie came out
     public int getReleaseYear() {
         return releaseYear.get();
     }
@@ -98,7 +84,7 @@ public class Movie {
         return releaseYear;
     }
 
-    // --- Rating Property ---
+    // Movie score rating from 0.0 to 10.0
     public double getRating() {
         return rating.get();
     }
@@ -111,7 +97,7 @@ public class Movie {
         return rating;
     }
 
-    // --- Status Property ---
+    // Watch status such as Watched or Want to Watch
     public String getStatus() {
         return status.get();
     }
@@ -124,7 +110,7 @@ public class Movie {
         return status;
     }
 
-    // --- Date Added Property ---
+    // Date the movie was saved
     public String getDateAdded() {
         return dateAdded.get();
     }
@@ -137,7 +123,7 @@ public class Movie {
         return dateAdded;
     }
 
-    // --- Poster URL Property ---
+    // Web address for the poster image
     public String getPosterUrl() {
         return posterUrl.get();
     }
@@ -150,6 +136,7 @@ public class Movie {
         return posterUrl;
     }
 
+    // Simple text version of the movie details
     @Override
     public String toString() {
         return String.format("%s | %s | %d | %.1f | %s", getTitle(), getGenre(), getReleaseYear(), getRating(), getStatus());

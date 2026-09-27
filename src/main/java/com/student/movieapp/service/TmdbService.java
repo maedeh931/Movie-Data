@@ -16,12 +16,10 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 
-/**
- * Service to interact with The Movie Database (TMDB) API.
- * Safely loads the API key from config.properties and searches movies.
- */
+// Helper that talks to The Movie Database (TMDB) to find movie posters and info
 public class TmdbService {
 
+    // Web addresses for TMDB search and poster images
     private static final String TMDB_BASE_URL = "https://api.themoviedb.org/3/search/movie";
     private static final String TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -29,6 +27,7 @@ public class TmdbService {
     private final HttpClient httpClient;
     private final String apiKey;
 
+    // Set up our web client and load the secret API key
     public TmdbService() {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(6))
@@ -36,11 +35,9 @@ public class TmdbService {
         this.apiKey = loadApiKey();
     }
 
-    /**
-     * Loads the TMDB API key from config.properties or environment.
-     */
+    // Find and read the secret API key from our config file
     private String loadApiKey() {
-        // 1. Try classpath resource
+        // 1. Try reading from the app resources folder
         try (InputStream in = getClass().getResourceAsStream("/config.properties")) {
             if (in != null) {
                 Properties props = new Properties();
@@ -53,7 +50,7 @@ public class TmdbService {
         } catch (Exception ignored) {
         }
 
-        // 2. Fallback to local file in project directory or resources folder
+        // 2. Try looking in the project folder directly
         Path[] candidatePaths = new Path[]{
                 Path.of("src", "main", "resources", "config.properties"),
                 Path.of("config.properties")
@@ -72,7 +69,7 @@ public class TmdbService {
             }
         }
 
-        // 3. Fallback to system property or environment variable
+        // 3. Check system or computer environment settings
         String sysProp = System.getProperty("tmdb.api.key");
         if (sysProp != null && !sysProp.isBlank()) {
             return sysProp.trim();
@@ -85,25 +82,24 @@ public class TmdbService {
         return "";
     }
 
+    // Check if an API key was found and isn't blank
     public boolean isApiKeyConfigured() {
         return apiKey != null && !apiKey.isBlank();
     }
 
-    /**
-     * Searches TMDB for a movie by title query and returns the top result if available.
-     *
-     * @param query Title or search term
-     * @return Optional containing the top TmdbMovieResult, or empty if no matches
-     * @throws Exception if network fails or API returns error
-     */
+    // Search for a movie by name and return the top match
     public Optional<TmdbMovieResult> searchMovie(String query) throws Exception {
+        // Make sure the title isn't empty
         if (query == null || query.trim().isEmpty()) {
             return Optional.empty();
         }
+
+        // Make sure the API key is ready to use
         if (!isApiKeyConfigured()) {
             throw new IllegalStateException("TMDB API key is not configured in config.properties.");
         }
 
+        // Prepare the web address and send the search request
         String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
         String url = TMDB_BASE_URL + "?api_key=" + apiKey + "&query=" + encodedQuery + "&include_adult=false";
 
@@ -120,18 +116,23 @@ public class TmdbService {
             throw new RuntimeException("TMDB API returned HTTP status " + response.statusCode());
         }
 
+        // Read the response from TMDB
         JsonNode root = OBJECT_MAPPER.readTree(response.body());
         JsonNode results = root.path("results");
         if (!results.isArray() || results.isEmpty()) {
             return Optional.empty();
         }
 
+        // Grab the first movie result from the list
         JsonNode top = results.get(0);
         String title = top.path("title").asText().trim();
+
+        // Extract the movie poster link
         JsonNode posterPathNode = top.path("poster_path");
         String posterPath = posterPathNode.isTextual() ? posterPathNode.asText() : null;
         String posterUrl = (posterPath != null && !posterPath.isBlank()) ? (TMDB_IMAGE_BASE + posterPath) : "";
 
+        // Extract the release year from the release date
         String releaseDate = top.path("release_date").asText();
         Integer releaseYear = null;
         if (releaseDate.length() >= 4) {
@@ -141,21 +142,25 @@ public class TmdbService {
             }
         }
 
+        // Extract and round the rating to one decimal place
         Double rating = null;
         if (top.has("vote_average")) {
             double rawRating = top.path("vote_average").asDouble(0.0);
             rating = Math.round(rawRating * 10.0) / 10.0;
         }
 
+        // Match TMDB genre numbers to our genre names
         String genre = null;
         JsonNode genreIds = top.path("genre_ids");
         if (genreIds.isArray() && !genreIds.isEmpty()) {
             genre = mapGenreId(genreIds.get(0).asInt());
         }
 
+        // Package the movie info and return it
         return Optional.of(new TmdbMovieResult(title, releaseYear, rating, posterUrl, genre));
     }
 
+    // Convert TMDB genre numbers into plain genre names
     private String mapGenreId(int id) {
         return switch (id) {
             case 28 -> "Action";
