@@ -310,11 +310,16 @@ public class MainController {
                 Runnable displayPoster = () -> {
                     if (!image.isError()) {
                         imageCache.put(url, image);                 // store in cache
-                        javafx.application.Platform.runLater(() -> {
+                        Runnable updateUI = () -> {
                             posterBox.getChildren().clear();
                             posterBox.setStyle("-fx-background-color: transparent;");
                             posterBox.getChildren().add(imageView); // show in this card
-                        });
+                        };
+                        if (javafx.application.Platform.isFxApplicationThread()) {
+                            updateUI.run();
+                        } else {
+                            javafx.application.Platform.runLater(updateUI);
+                        }
                     }
                 };
 
@@ -700,7 +705,7 @@ public class MainController {
                 tempMovie.setId(generatedId);
             }
             masterMovieList.add(0, tempMovie);
-            renderMovieCards();
+            handleSearchAndFilter();
             updateStats();
 
             Alert alert = new Alert(Alert.AlertType.INFORMATION);

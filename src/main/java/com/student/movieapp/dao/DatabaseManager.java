@@ -1,7 +1,7 @@
 package com.student.movieapp.dao;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.student.movieapp.model.Movie;
 
 import java.io.InputStreamReader;
@@ -89,9 +89,8 @@ public class DatabaseManager {
         try (Reader reader = new InputStreamReader(Objects.requireNonNull(DatabaseManager.class.getResourceAsStream("/data/movies.json")));
              PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
              
-            Gson gson = new Gson();
-            Type movieListType = new TypeToken<ArrayList<MovieDTO>>(){}.getType();
-            List<MovieDTO> movies = gson.fromJson(reader, movieListType);
+            ObjectMapper mapper = new ObjectMapper();
+            List<MovieDTO> movies = mapper.readValue(reader, new TypeReference<List<MovieDTO>>() {});
             
             for (MovieDTO dto : movies) {
                 pstmt.setString(1, dto.title);
