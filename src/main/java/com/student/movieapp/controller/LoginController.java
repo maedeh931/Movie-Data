@@ -53,7 +53,7 @@ public class LoginController {
             scene.getStylesheets().add(cssPath);
 
             // Configure window properties and show the dashboard
-            stage.setTitle("CineVault — Movie Tracker & Vault");
+            stage.setTitle("Movie Watchlist Manager");
             stage.setMinWidth(1000);
             stage.setMinHeight(650);
             stage.setResizable(true);
@@ -77,7 +77,7 @@ public class LoginController {
         // Apply dark styling to the alert popup
         DialogPane pane = alert.getDialogPane();
         pane.getStylesheets().add(getClass().getResource("/styles/application.css").toExternalForm());
-        pane.getStyleClass().add("cinevault-dialog");
+        pane.getStyleClass().add("movie-dialog");
 
         alert.showAndWait();
     }

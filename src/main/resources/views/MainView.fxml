@@ -27,10 +27,10 @@
                   <HBox alignment="CENTER_LEFT" spacing="6.0">
                      <children>
                         <Label styleClass="brand-accent" text="✦" />
-                        <Label styleClass="brand-title" text="CINEVAULT" />
+                        <Label styleClass="brand-title" text="Movie Watchlist Manager" />
                      </children>
                   </HBox>
-                  <Label styleClass="brand-subtitle" text="Movie Tracker &amp; Vault" />
+                  <Label styleClass="brand-subtitle" text="Movie Tracker &amp; Watchlist" />
                </children>
                <VBox.margin>
                   <Insets bottom="10.0" left="4.0" />

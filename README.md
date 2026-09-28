@@ -1,6 +1,6 @@
-# CineVault — Modern Movie Tracker & Watchlist
+# Movie Watchlist Manager
 
-CineVault is a dark-mode desktop movie tracker built in Java following the Model-View-Controller (MVC) architecture. It lets you organize a personal movie collection with ratings, release years, and watch statuses, calculate real-time stats, and fetch official movie posters live from The Movie Database (TMDB) API.
+Movie Watchlist Manager is a dark-mode desktop movie tracker built in Java following the Model-View-Controller (MVC) architecture. It lets you organize a personal movie collection with ratings, release years, and watch statuses, calculate real-time stats, and fetch official movie posters live from The Movie Database (TMDB) API.
 
 ---
 
@@ -120,7 +120,7 @@ Click any file to view its implementation directly in the repository:
 - **Resources & UI Layouts**:
   - [`config.properties.example`](src/main/resources/config.properties.example) — API key configuration template
   - [`movies.json`](src/main/resources/data/movies.json) — Initial movie seed dataset
-  - [`application.css`](src/main/resources/styles/application.css) — CineVault dark theme stylesheet
+  - [`application.css`](src/main/resources/styles/application.css) — Movie Watchlist Manager dark theme stylesheet
   - [`LoginView.fxml`](src/main/resources/views/LoginView.fxml) — Login view layout
   - [`MainView.fxml`](src/main/resources/views/MainView.fxml) — Main dashboard view layout
   - [`MovieDialog.fxml`](src/main/resources/views/MovieDialog.fxml) — Add/Edit movie modal layout

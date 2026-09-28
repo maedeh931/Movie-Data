@@ -106,7 +106,7 @@ public class TmdbService {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(Duration.ofSeconds(10))
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CineVault/1.0")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MovieWatchlistManager/1.0")
                 .header("Accept", "application/json")
                 .GET()
                 .build();

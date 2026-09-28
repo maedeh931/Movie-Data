@@ -8,7 +8,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
-// Main starting point of the CineVault desktop app
+// Main starting point of the Movie Watchlist Manager desktop app
 public class MainApp extends Application {
 
     // Make sure web requests look like a normal browser
@@ -38,7 +38,7 @@ public class MainApp extends Application {
             scene.getStylesheets().add(cssPath);
 
             // Set up the window title and display it on screen
-            primaryStage.setTitle("CineVault — Sign In");
+            primaryStage.setTitle("Movie Watchlist Manager");
             primaryStage.setResizable(false);
             primaryStage.setScene(scene);
             primaryStage.show();

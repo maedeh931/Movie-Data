@@ -327,7 +327,7 @@ public class MovieDialogController {
 
             DialogPane pane = alert.getDialogPane();
             pane.getStylesheets().add(getClass().getResource("/styles/application.css").toExternalForm());
-            pane.getStyleClass().add("cinevault-dialog");
+            pane.getStyleClass().add("movie-dialog");
 
             alert.showAndWait();
             return false;

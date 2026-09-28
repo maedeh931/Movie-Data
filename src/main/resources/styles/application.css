@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CINEVAULT — Dark Mode Desktop Application Stylesheet
+   MOVIE WATCHLIST MANAGER — Dark Mode Desktop Application Stylesheet
    ========================================================================== */
 
 .root {
@@ -26,6 +26,10 @@
     -fx-font-weight: 800;
     -fx-text-fill: #ffffff;
     -fx-letter-spacing: 0.5px;
+}
+
+.sidebar-panel .brand-title {
+    -fx-font-size: 14px;
 }
 
 .brand-accent {
@@ -554,7 +558,7 @@
    7. MODAL DIALOGS & ALERTS (DARK THEME)
    ========================================================================== */
 
-.dialog-pane, .cinevault-dialog {
+.dialog-pane, .movie-dialog {
     -fx-background-color: #121217;
     -fx-padding: 22px;
 }

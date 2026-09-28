@@ -675,7 +675,7 @@ public class MainController {
             applyDarkThemeToDialog(alert);
             alert.setTitle("Success");
             alert.setHeaderText("Movie Added");
-            alert.setContentText("Movie \"" + tempMovie.getTitle() + "\" was added to CineVault database.");
+            alert.setContentText("Movie \"" + tempMovie.getTitle() + "\" was added to Movie Watchlist Manager database.");
             alert.showAndWait();
         }
     }
@@ -731,7 +731,7 @@ public class MainController {
                 applyDarkThemeToDialog(info);
                 info.setTitle("Movie Deleted");
                 info.setHeaderText(null);
-                info.setContentText("The movie was removed from CineVault database.");
+                info.setContentText("The movie was removed from Movie Watchlist Manager database.");
                 info.showAndWait();
             }
         } else {
@@ -867,7 +867,7 @@ public class MainController {
     public void applyDarkThemeToDialog(Dialog<?> dialog) {
         DialogPane pane = dialog.getDialogPane();
         pane.getStylesheets().add(getClass().getResource("/styles/application.css").toExternalForm());
-        pane.getStyleClass().add("cinevault-dialog");
+        pane.getStyleClass().add("movie-dialog");
         Stage stage = (Stage) pane.getScene().getWindow();
         if (stage != null) {
             stage.setTitle(dialog.getTitle());

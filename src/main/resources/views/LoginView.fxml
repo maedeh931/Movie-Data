@@ -19,7 +19,7 @@
                   <HBox alignment="CENTER_LEFT" spacing="6.0">
                      <children>
                         <Label styleClass="brand-accent" text="✦" />
-                        <Label styleClass="brand-title" text="CINEVAULT" />
+                        <Label styleClass="brand-title" text="Movie Watchlist Manager" />
                      </children>
                   </HBox>
                   <Label styleClass="brand-subtitle" text="Sign in to access your Movie Watchlist" />
